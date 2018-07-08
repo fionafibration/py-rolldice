@@ -55,3 +55,19 @@ d6! Roll a d6 and explode every time a 6 is rolled
 d20!>10: Roll a d20 and explode every time a number higher than 10 is rolled
 d12!<2: Roll a d12 and explode every time a 1 is rolled.
 ```
+
+##### Count Successes (> or <):
+Counts the number of rolls above or below a certain value.
+```
+4d20>19: Rolls 4d20 and counts the number of rolls above 19
+10d12<3: Rolls 10d12 and counts the number of rolls below 3
+```
+  
+That's all there is to it!
+
+## Planned features:
+- [ ] Allow for exploding on specific numbers instead of just comparisons
+- [ ] Count failures as in CritDice syntax
+- [ ] Penetrating dice
+- [ ] Rerolling once or arbitrary number of times on a given condition
+- [ ] Count successes not only as comparisons but on specific numbers 
