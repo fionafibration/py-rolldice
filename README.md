@@ -15,7 +15,7 @@ Dice syntax is loosely based on [CritDice](https://www.critdice.com/roll-advance
 ```
 4d10 + 17: Roll a 10-sided die 4 times and add 17 to the result
 2d20 - 3: Roll a 20 sided die 2 times and subtract 3
-15d4 * 3: Roll a 4 sided die once and multiply by 3
+1d4 * 3: Roll a 4 sided die once and multiply by 3
 ```
 You get the idea. Spaces are optional and can actually be inserted anywhere in the rolls. `1 5 d 2 0 + 3 5` actually works.
 
