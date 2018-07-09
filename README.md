@@ -28,7 +28,7 @@ You get the idea. Spaces are optional and can actually be inserted anywhere in t
 
 #### Advanced syntax:
 
-###### Keep Highest (K):
+##### Keep Highest (K):
 Used to (K)eep the highest roll. Can be followed by a number to keep that number of dice or by nothing to indicate keeping only one.
 ```
 4d10K: Roll 4d10 and keep only the highest roll
@@ -36,7 +36,7 @@ Used to (K)eep the highest roll. Can be followed by a number to keep that number
 7d12K3 + 4: Roll as above then add 4
 ```
 
-###### Keep Lowest (k):
+##### Keep Lowest (k):
 Same as above but keeping the lowest.
 ```
 3d3k: Roll 3d3 and keep the lowest roll
