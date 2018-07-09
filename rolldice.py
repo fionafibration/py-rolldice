@@ -9,6 +9,37 @@ class DiceOperatorException(Exception): #Exception for when incorrect or malform
     def __init__(self, *args, **kwargs):
         Exception.__init__(self, *args, **kwargs)
 
+class DiceBag():
+    def __init__(self, roll='0'): #Initialize dicebag with a default roll of a 0 literal
+        self.roll = roll
+        self._lastroll = None
+        
+    def roll_dice(self): #Roll dice with current roll
+        self._lastroll = roll_dice(self.roll)
+        return self.lastroll
+    
+    def __call__(self, *args, **kwargs): #Allow for calling the object, same thing as self.roll_dice
+        self.roll_dice(*args, **kwargs)
+
+    @property
+    def roll(self): #Standard getter
+        return self._roll 
+
+    @roll.setter
+    def roll(self, value):
+        if type(value != str) #Make sure dice roll is a str
+            raise TypeError('Dice roll must be a string in dice notation')
+        try:
+            result = roll_dice(value) #Make sure dice roll parses as a valid roll and not an error
+        except Exception as e:
+            raise ValueError('Dice roll specified was not a valid diceroll.\n%s\n' % str(e))
+        else:
+            self._roll = value
+            
+    @property
+    def lastroll(self): #Only getter, lastroll should be read-only.
+        return self._lastroll
+
 #Self explanatory
 def unzip(seq):
     return (seq[::2], seq[1::2])
