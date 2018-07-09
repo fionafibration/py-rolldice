@@ -82,4 +82,4 @@ That's all there is to it!
 - [X] Count failures as in CritDice syntax
 - [ ] Penetrating dice
 - [ ] Rerolling once or arbitrary number of times on a given condition
-- [ ] Count successes not only as comparisons but on specific numbers 
+
