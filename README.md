@@ -1,5 +1,5 @@
 # py-dice-roll
-A python module for parsing string representation of D&amp;D dice and rolling said dice.
+A python module for parsing string representation (aka Dice Notation) of dice rolls and rolling said dice.
 
 ## Usage:
 To use py-dice-roll, you need to have the extended regex library installed. 
