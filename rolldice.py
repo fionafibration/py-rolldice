@@ -52,11 +52,12 @@ def num_equal(result, operator, comparator):
 
 def roll_dice(roll):
     roll = ''.join(roll.split())
-    roll = zero_width_split(r'((?<=[\+*-])(?=[^\+*-]))|((?<=[^\+*-])(?=[\+*-]))', roll) #Split the string on the boundary between +-* characters and every other character
+    roll = zero_width_split(r'((?<=[\+*-])(?=[^\+*-]))|((?<=[^\+*-])(?=[\+*-]))', roll) #Split the string on the boundary between +-* characters and every other character'
 
     string = []
     
     roll_groups, ops = unzip(roll)
+    
     try:
         assert len(roll_groups) == len(ops) + 1
     except:
@@ -70,6 +71,12 @@ def roll_dice(roll):
             specplode = regex.match(r'^((\d*)d(\d+))!(\d+)$', group) #Regex for exploding dice on specific number, ie. d20!10 or d12!4
 
             complode = regex.match(r'^((\d*)d(\d+))!([<>])(\d+)$', group) #Regex for exploding dice with a comparison, ie. d20!>10, d6!<2
+
+            penetrate = regex.match(r'^((\d*)d(\d+))!p$', group) #Penetrating dice are the same as exploding except any dice after the initial number are added with a -1 penalty
+
+            specpen = regex.match(r'^((\d*)d(\d+))!p(\d+)$', group) #See above
+
+            compen = regex.match(r'^((\d*)d(\d+))!p([<>])(\d+)$', group) #See above
 
             comparison = regex.match(r'^((?:\d*)d(\d+))([<>])(\d+)$', group) #Regex for dice with comparison, ie. 2d10>4, 5d3<2, etc.
 
@@ -105,6 +112,8 @@ def roll_dice(roll):
                 assert type_of_dice in [2,3,4,6,8,10,12,20,100]
 
                 comparator = int(specplode[4])
+
+                assert comparator > 0 and comparator <= type_of_dice
                 
                 result = []
                 last_result = roll_group(specplode[1])
@@ -124,6 +133,11 @@ def roll_dice(roll):
                 assert type_of_dice in [2,3,4,6,8,10,12,20,100]
 
                 comparator = int(complode[5])
+
+                if complode[4] == '>': #Ensure comparison is within bounds
+                    assert comparator > 0 and comparator < type_of_dice
+                else:
+                    assert comparator > 1 and comparator <= type_of_dice
                 
                 result = []
                 last_result = roll_group(complode[1])
@@ -146,6 +160,101 @@ def roll_dice(roll):
 
                 results.append(sum(result))
 
+            elif penetrate != None: #Handle penetrating dice without a comparison modifier. 
+                type_of_dice = int(penetrate[3])
+                assert type_of_dice in [2,3,4,6,8,10,12,20,100]
+
+                first_num = int(penetrate[2])
+                
+                result = []
+                last_result = roll_group(penetrate[1])
+                result.extend(last_result)
+                number_to_roll = num_equal(last_result, '=', type_of_dice)
+                while number_to_roll != 0:
+                    last_result = roll_group(str(number_to_roll) + 'd' + str(type_of_dice))
+                    result.extend(last_result)
+                    number_to_roll = num_equal(last_result, '=', type_of_dice)
+                    
+                pre_result = result[:first_num] #Add the first rolls with no modifier
+                pre_result.extend([x - 1 for x in result[first_num:]]) #Add the second rolls with a -1 modifier
+                
+                results.append(sum(pre_result))
+                
+                roll = ','.join(['!' + str(i) if i == type_of_dice else str(i) for i in result[:first_num]]) #Add the first numbers, without the -1 but with a ! when roll is penetration
+                roll += (',' if len(pre_result) > first_num else '') #Only add the comma in between if there's at least one penetration
+                roll += ','.join([('!' + str(i) + '-1' if i == type_of_dice else str(i) + '-1') for i in result[first_num:]]) #Add the penetration dice with the '-1' tacked on the end
+
+            elif specpen != None: #Handle penetrating dice without a comparison modifier. 
+                type_of_dice = int(specpen[3])
+                assert type_of_dice in [2,3,4,6,8,10,12,20,100]
+
+                first_num = int(specpen[2])
+
+                comparator = int(specpen[4])
+
+                assert comparator > 0 and comparator <= type_of_dice
+                
+                result = []
+                last_result = roll_group(specpen[1])
+                result.extend(last_result)
+                number_to_roll = num_equal(last_result, '=', comparator)
+                while number_to_roll != 0:
+                    last_result = roll_group(str(number_to_roll) + 'd' + str(type_of_dice))
+                    result.extend(last_result)
+                    number_to_roll = num_equal(last_result, '=', comparator)
+
+                pre_result = result[:first_num] #Same as normal penetration
+                pre_result.extend([x - 1 for x in result[first_num:]])
+                
+                results.append(sum(pre_result))
+                
+                roll = ','.join(['!' + str(i) if i == comparator else str(i) for i in result[:first_num]]) #Same as above
+                roll += (',' if len(pre_result) > first_num else '') 
+                roll += ','.join([('!' + str(i) + '-1' if i == comparator else str(i) + '-1') for i in result[first_num:]]) 
+
+            elif compen != None: #Handle penetrating dice without a comparison modifier. 
+                type_of_dice = int(compen[3])
+                assert type_of_dice in [2,3,4,6,8,10,12,20,100]
+
+                comparator = int(compen[5])
+
+                first_num = int(compen[2])
+
+                if compen[4] == '>': #Ensure comparison is within bounds
+                    assert comparator > 0 and comparator < type_of_dice
+                else:
+                    assert comparator > 1 and comparator <= type_of_dice
+                
+                result = []
+                last_result = roll_group(compen[1])
+                result.extend(last_result)
+                if compen[4] == '>':
+                    number_to_roll = num_equal(last_result, '>', comparator)
+                    while number_to_roll != 0:
+                        last_result = roll_group(str(number_to_roll) + 'd' + str(type_of_dice))
+                        result.extend(last_result)
+                        number_to_roll = num_equal(last_result, '>', comparator)
+    
+                else:
+                    number_to_roll = num_equal(last_result, '<', comparator)
+                    while number_to_roll != 0:
+                        last_result = roll_group(str(number_to_roll) + 'd' + str(type_of_dice))
+                        result.extend(last_result)
+                        number_to_roll = num_equal(last_result, '<', comparator)
+                
+                pre_result = result[:first_num]
+                pre_result.extend([x - 1 for x in result[first_num:]])
+                results.append(sum(pre_result))
+                
+                if compen[4] == '>':
+                    roll = ','.join(['!' + str(i) if i > comparator else str(i) for i in result[:first_num]]) #Same as above
+                    roll += (',' if len(pre_result) > first_num else '')
+                    roll += ','.join([('!' + str(i) + '-1' if i > comparator else str(i) + '-1') for i in result[first_num:]])
+                else:
+                    roll = ','.join(['!' + str(i) if i < comparator else str(i) for i in result[:first_num]]) #Same as above
+                    roll += (',' if len(pre_result) > first_num else '')
+                    roll +=','.join([('!' + str(i) + '-1' if i < comparator else str(i) + '-1') for i in result[first_num:]])
+                                
             elif comparison != None:
                 group_result = roll_group(comparison[1])
                 result = []
@@ -222,7 +331,8 @@ def roll_dice(roll):
                 assert num_to_keep < len(group_result) and num_to_keep >= 1
                 
                 results.append(sum(group_result[:num_to_keep]))
-                roll = ','.join([str(i) for i in group_result[:num_to_keep]]) + ' ~~ ' + ','.join([str(i) for i in group_result[num_to_keep:]]) #This time format the string with all kept rolls on the left and dropped rolls on the right
+                roll = ','.join([str(i) for i in group_result[:num_to_keep]]) + ' ~~ ' #This time format the string with all kept rolls on the left and dropped rolls on the right
+                roll += ','.join([str(i) for i in group_result[num_to_keep:]]) 
             
             elif drop != None:
                 group_result = roll_group(drop[1])
@@ -232,7 +342,8 @@ def roll_dice(roll):
                 assert num_to_drop < len(group_result) and num_to_drop >= 1
                                
                 results.append(sum(group_result[:num_to_drop]))
-                roll = ','.join([str(i) for i in group_result[num_to_drop:]]) + ' ~~ ' + ','.join([str(i) for i in group_result[:num_to_drop]]) #Same as above.
+                roll = ','.join([str(i) for i in group_result[num_to_drop:]]) + ' ~~ '  #Same as above.
+                roll += ','.join([str(i) for i in group_result[:num_to_drop]])
                 
             elif normal != None: 
                 group_result = roll_group(group)
@@ -245,7 +356,7 @@ def roll_dice(roll):
             
             else:
                 raise Exception
-                #print([explode, specplode, complode, compfail, comparison, keep, drop, normal, literal])
+            
         except:
             raise DiceGroupException('"%s" is not a valid dicegroup.' % group)
         
