@@ -16,6 +16,7 @@ Dice syntax is loosely based on [CritDice](https://www.critdice.com/roll-advance
 4d10 + 17: Roll a 10-sided die 4 times and add 17 to the result
 2d20 - 3: Roll a 20 sided die 2 times and subtract 3
 1d4 * 3: Roll a 4 sided die once and multiply by 3
+d4 * 3: Same as above, leaving out the number of dice will default to 1
 ```
 You get the idea. Spaces are optional and can actually be inserted anywhere in the rolls. `1 5 d 2 0 + 3 5` actually works.
 
@@ -50,10 +51,11 @@ You get the idea.
 ##### Exploding Dice (!):
 Exploding dice is usually known as 'Rule of 6' or 'Rule of 10,' as it is in Shadowrun. As long as the roll passes the specified comparison, another dice is rolled and added to the total. This process repeats until a number that does not match the comparison is rolled.
 ```
-d20!: Roll a d20 and explode every time a 20 is rolled
-d6! Roll a d6 and explode every time a 6 is rolled
+2d20!: Roll 2d20 and explode every time a 20 is rolled
+7d20!3: Roll 7d20 and explode every time a 3 is rolled
+4d6! Roll 4d6 and explode every time a 6 is rolled
 d20!>10: Roll a d20 and explode every time a number higher than 10 is rolled
-d12!<2: Roll a d12 and explode every time a 1 is rolled.
+3d12!<2: Roll 3d12 and explode every time a 1 is rolled.
 ```
 
 ##### Count Successes (> or <):
@@ -62,12 +64,22 @@ Counts the number of rolls above or below a certain value.
 4d20>19: Rolls 4d20 and counts the number of rolls above 19
 10d12<3: Rolls 10d12 and counts the number of rolls below 3
 ```
-  
+
+##### Count failures (f):
+Addition to counting successes to specify an additional 'failure' condition. Each failure will decrease the score by 1 while each success will still increase by 1.
+```
+10d10>6f<3: Roll 10d10 and count successes over 6 and failures under 3
+4d20<5f>19: Roll 4d20 and count successes under 5 and failures over 19
+5d100<5f>3: Invalid, you cannot have your failure and success comparison both be more than or less than.
+```
+
+
+
 That's all there is to it!
 
 ## Planned features:
-- [ ] Allow for exploding on specific numbers instead of just comparisons
-- [ ] Count failures as in CritDice syntax
+- [X] Allow for exploding on specific numbers instead of just comparisons
+- [X] Count failures as in CritDice syntax
 - [ ] Penetrating dice
 - [ ] Rerolling once or arbitrary number of times on a given condition
 - [ ] Count successes not only as comparisons but on specific numbers 
