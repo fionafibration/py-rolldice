@@ -80,6 +80,15 @@ Addition to counting successes to specify an additional 'failure' condition. Eac
 5d100<5f>3: Invalid, you cannot have your failure and success comparison both be more than or less than.
 ```
 
+##### Penetrating Dice (!p):
+Penetrating dice are the same as exploding dice except all rolls from explosions are added with a -1 modifier.
+```
+2d20!: Roll 2d20 and penetrate every time a 20 is rolled
+7d20!3: Roll 7d20 and penetrate every time a 3 is rolled
+4d6! Roll 4d6 and penetrate every time a 6 is rolled
+d20!>10: Roll a d20 and penetrate every time a number higher than 10 is rolled
+3d12!<2: Roll 3d12 and penetrate every time a 1 is rolled.
+```
 
 
 That's all there is to it!
@@ -87,6 +96,6 @@ That's all there is to it!
 ## Planned features:
 - [X] Allow for exploding on specific numbers instead of just comparisons
 - [X] Count failures as in CritDice syntax
-- [ ] Penetrating dice
+- [X] Penetrating dice
 - [ ] Rerolling once or arbitrary number of times on a given condition
 
