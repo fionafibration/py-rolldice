@@ -2,11 +2,17 @@
 A python module for parsing string representation of D&amp;D dice and rolling said dice.
 
 ## Usage:
+To use py-dice-roll, you need to have the extended regex library installed. 
+To do this, go into your command prompt and type:
+```
+python -m pip install regex
+```
+Now you can use py-dice-roll in your project. Simply put the rolldice.py file in the same folder as your main project. Then import it as usual and run the roll_dice function:
 ```
 import rolldice
-rolldice.roll_dice('12d6 + 10')
+result, explanation = rolldice.roll_dice('12d6 + 10')
 ```
-That's it. The function will return a tuple containing the numerical result and a constructed representation string, in that order.
+That's it. The function takes the string representation of your dice roll and will return a tuple containing the numerical result and a constructed representation string, in that order.
 
 ## Dice Syntax:
 
