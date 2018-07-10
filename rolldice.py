@@ -32,7 +32,7 @@ class DiceBag():
 
     @roll.setter
     def roll(self, value):
-        if type(value != str) #Make sure dice roll is a str
+        if type(value) != str #Make sure dice roll is a str
             raise TypeError('Dice roll must be a string in dice notation')
         try:
             result = roll_dice(value) #Make sure dice roll parses as a valid roll and not an error
