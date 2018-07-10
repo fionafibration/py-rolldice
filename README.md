@@ -89,13 +89,27 @@ Penetrating dice are the same as exploding dice except all rolls from explosions
 d20!>10: Roll a d20 and penetrate every time a number higher than 10 is rolled
 3d12!<2: Roll 3d12 and penetrate every time a 1 is rolled.
 ```
+## Dicebag Class:
 
+The dicebag class provides an easy way to store a certain roll and reroll it. 
+Usage:
+```
+import rolldice
+dicebag = DiceBag() #Initializes with a roll of '0'
+#OR
+dicebag = DiceBag('12d6 + 2d20K') #Initializes with a roll of '12d6 + 2d20K'
 
+result, explanation = dicebag.roll_dice() #Repeat as needed
+
+#The last roll is also stored in dicebag.lastroll
+assert result = dicebag.lastroll[0] and explanation = dicebag.lastroll[1]
+```
 That's all there is to it!
 
 ## Planned features:
 - [X] Allow for exploding on specific numbers instead of just comparisons
 - [X] Count failures as in CritDice syntax
 - [X] Penetrating dice
+- [X] DiceBag object for repeating dice rolls and storing as an object.
 - [ ] Rerolling once or arbitrary number of times on a given condition
 
