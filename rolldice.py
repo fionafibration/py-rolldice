@@ -1,3 +1,8 @@
+'''
+py-dice-roll
+Created by Finianb1
+https://github.com/ThePlasmaRailgun/py-dice-roll/
+'''
 import random
 import regex
 
