@@ -1,13 +1,12 @@
-# py-dice-roll
+# py-rolldice
 A python module for parsing string representation (aka Dice Notation) of dice rolls and rolling said dice.
 
 ## Usage:
-To use py-dice-roll, you need to have the extended regex library installed. 
-To do this, go into your command prompt and type:
+Usage is very simple. Simply install py-rolldice with:
 ```
-python -m pip install regex
+python -m pip install py-rolldice
 ```
-Now you can use py-dice-roll in your project. Simply put the rolldice.py file in the same folder as your main project. Then import it as usual and run the roll_dice function:
+ Then import it as usual and run the roll_dice function:
 ```
 import rolldice
 result, explanation = rolldice.roll_dice('12d6 + 10')
@@ -94,7 +93,7 @@ d20!>10: Roll a d20 and penetrate every time a number higher than 10 is rolled
 The dicebag class provides an easy way to store a certain roll and reroll it. 
 Usage:
 ```
-import rolldice
+from rolldice import *
 dicebag = DiceBag() #Initializes with a roll of '0'
 #OR
 dicebag = DiceBag('12d6 + 2d20K') #Initializes with a roll of '12d6 + 2d20K'
