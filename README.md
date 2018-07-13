@@ -95,12 +95,12 @@ Usage:
 ```
 from rolldice import *
 dicebag = DiceBag() #Initializes with a roll of '0'
-#OR
+# OR
 dicebag = DiceBag('12d6 + 2d20K') #Initializes with a roll of '12d6 + 2d20K'
 
 result, explanation = dicebag.roll_dice() #Repeat as needed
 
-#The last roll is also stored in dicebag.lastroll
+# The last roll is also stored in dicebag.lastroll
 assert result = dicebag.lastroll[0] and explanation = dicebag.lastroll[1]
 ```
 That's all there is to it!
