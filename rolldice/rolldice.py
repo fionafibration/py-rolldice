@@ -526,5 +526,7 @@ def roll_dice(roll):
     explanation = ''.join(string)
     explanation = explanation.strip()
 
+    explanation = regex.sub(r'[ \t]{2,}', ' ', explanation)
+
     return final_result, explanation
 
