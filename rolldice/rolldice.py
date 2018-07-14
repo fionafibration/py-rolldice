@@ -81,32 +81,6 @@ class DiceBag:
         return self._lastroll
 
 
-# Self explanatory
-def unzip(seq):
-    """
-    Returns a de-interleaved list
-
-    :param seq: List to 'unzip'
-    :return: Two lists, unzipped seq
-    """
-    return seq[::2], seq[1::2]
-
-
-# Joins a list of contents on a list of separators, with spaces in between.
-def join_on_list(separators, contents):
-    """
-    Joins a list of contents on a list of separators adding spaces.
-
-    :param separators: List of separators, must be 1 shorter than contents
-    :param contents: List of contents
-    :return: String of joined contents and separators
-    """
-    string = list(contents[0])
-    for i, content in enumerate(contents[1:]):
-        string.extend(list(' %s %s' % (separators[i], content)))
-    return ''.join(string)
-
-
 def zero_width_split(pattern, string):
     """
     Split a string on a regex that only matches zero-width strings
@@ -128,7 +102,7 @@ def roll_group(group):
     :param group:
     :return:
     """
-    group = regex.match(r'^(\d*)d(\d+)$', group)
+    group = regex.match(r'^(\d*)d(\d+)$', group, regex.IGNORECASE)
     num_of_dice = int(group[1]) if group[1] != '' else 1
     type_of_dice = int(group[2])
     assert num_of_dice > 0
@@ -174,7 +148,7 @@ def roll_dice(roll):
     results = []
 
     for group in roll:
-        if group in '+-*':
+        if group in '+-*': #Append operators and make sure spacing is right.
             results.append(group)
             string.append(' %s ' % group)
             continue
@@ -187,37 +161,31 @@ def roll_dice(roll):
             string.append('%s ' % group)
             continue
         try:
-            explode = regex.match(r'^((\d*)d(\d+))!$', group)  # Regex for exploding dice, ie. 2d10!, 4d100!, d12!, etc.
+            explode = regex.match(r'^((\d*)d(\d+))!$', group, regex.IGNORECASE)  # Regex for exploding dice, ie. 2d10!, 4d100!, d12!, etc.
 
-            specific_explode = regex.match(r'^((\d*)d(\d+))!(\d+)$',
-                                           group)  # Regex for exploding dice on specific number, ie. d20!10 or d12!4
+            specific_explode = regex.match(r'^((\d*)d(\d+))!(\d+)$', group)  # Regex for exploding dice on specific number, ie. d20!10 or d12!4
 
-            comparison_explode = regex.match(r'^((\d*)d(\d+))!([<>])(\d+)$', group)  # Regex for exploding dice with a comparison, ie. d20!>10, d6!<2
+            comparison_explode = regex.match(r'^((\d*)d(\d+))!([<>])(\d+)$', group, regex.IGNORECASE)  # Regex for exploding dice with a comparison, ie. d20!>10, d6!<2
 
-            penetrate = regex.match(r'^((\d*)d(\d+))!p$', group)  # Penetrating dice are the same as exploding except any dice after the initial number are added with a -1 penalty
+            penetrate = regex.match(r'^((\d*)d(\d+))!p$', group, regex.IGNORECASE)  # Penetrating dice are the same as exploding except any dice after the initial number are added with a -1 penalty
 
-            specific_penetrate = regex.match(r'^((\d*)d(\d+))!p(\d+)$', group)  # See above
+            specific_penetrate = regex.match(r'^((\d*)d(\d+))!p(\d+)$', group, regex.IGNORECASE)  # See above
 
-            comparison_penetrate = regex.match(r'^((\d*)d(\d+))!p([<>])(\d+)$', group)  # See above
+            comparison_penetrate = regex.match(r'^((\d*)d(\d+))!p([<>])(\d+)$', group, regex.IGNORECASE)  # See above
 
-            success_comparison = regex.match(r'^((?:\d*)d(\d+))([<>])(\d+)$', group)  # Regex for dice with comparison, ie. 2d10>4, 5d3<2, etc.
+            success_comparison = regex.match(r'^((?:\d*)d(\d+))([<>])(\d+)$', group, regex.IGNORECASE)  # Regex for dice with comparison, ie. 2d10>4, 5d3<2, etc.
 
-            success_fail_comparison = regex.match(r'^((?:\d*)d(\d+))(?|((<)(\d+)f(>)(\d+))|((>)(\d+)f(<)(\d+)))$',
-                                                  group)  # Regex for dice with success comparison and failure comparison.
+            success_fail_comparison = regex.match(r'^((?:\d*)d(\d+))(?|((<)(\d+)f(>)(\d+))|((>)(\d+)f(<)(\d+)))$', group, regex.IGNORECASE)  # Regex for dice with success comparison and failure comparison.
 
-            keep = regex.match(r'^((?:\d*)d\d+)([Kk])(\d*)$',
-                               group)  # Regex for keeping a number of dice, ie. 2d10K, 2d10k3, etc.
+            keep = regex.match(r'^((?:\d*)d\d+)([Kk])(\d*)$', group, regex.IGNORECASE)  # Regex for keeping a number of dice, ie. 2d10K, 2d10k3, etc.
 
-            drop = regex.match(r'^((?:\d*)d\d+)([Xx])(\d*)$', group)  # As above but with dropping dice and X
+            drop = regex.match(r'^((?:\d*)d\d+)([Xx])(\d*)$', group, regex.IGNORECASE)  # As above but with dropping dice and X
 
-            individual = regex.match(r'^((\d*)d(\d+))\(([+\-*])\)(\d+)$', group) #Regex for rolling dice with an
-                                                                                #Modifier attached to each roll
+            individual = regex.match(r'^((\d*)d(\d+))([asm])(\d+)$', group, regex.IGNORECASE) #Regex for rolling dice with a modifier attached to each roll
 
-            normal = regex.match(r'^((\d*)d(\d+))$', group)  # Regex for normal dice rolls
+            normal = regex.match(r'^((\d*)d(\d+))$', group, regex.IGNORECASE)  # Regex for normal dice rolls
 
-            literal = regex.match(r'^(\d+)$',
-                                  group)  # Regex for number literals. Note that preceding negative signs are not used,
-                                            # simply subtract
+            literal = regex.match(r'^(\d+)$', group, regex.IGNORECASE)  # Regex for number literals. Note that preceding negative signs are not used, simply subtract
 
             if explode is not None:  # Handle exploding dice without a comparison modifier.
                 type_of_dice = int(explode[3])
@@ -487,20 +455,23 @@ def roll_dice(roll):
             elif individual is not None:
                 group_result = roll_group(individual[1])
                 result = []
-                for i, j in enumerate(group_result):
-                    if individual[4] == '+':
+                for i, j in enumerate(group_result): #add to each roll
+                    if individual[4] == 'a':
                         result.append(j + int(individual[5]))
+                        op = '+'
 
-                    elif individual[4] == '-':
+                    elif individual[4] == 's':
                         result.append(j - int(individual[5]))
-
-                    elif individual[4] == '*':
+                        op = '-'
+                        
+                    elif individual[4] == 'm':
                         result.append(j * int(individual[5]))
-
+                        op = '*'
+                        
                     else:
                         raise ValueError
                 results.append(sum(result))
-                roll = ','.join([str(x) + individual[4] + individual[5] for x in group_result])
+                roll = ','.join([str(x) + op + individual[5] for x in group_result]) #Create string with the modifier on each roll
 
             elif normal is not None:
                 group_result = roll_group(group)
@@ -516,16 +487,14 @@ def roll_dice(roll):
 
         except Exception:
             raise DiceGroupException('"%s" is not a valid dicegroup.' % group)
-
+        
         string.append('(%s)' % roll)
 
     final_result = eval(''.join([str(x) for x in results]))
 
-    print(string)
-
+    #Create explanation string and remove extraneous spaces
     explanation = ''.join(string)
     explanation = explanation.strip()
-
     explanation = regex.sub(r'[ \t]{2,}', ' ', explanation)
 
     return final_result, explanation

@@ -24,7 +24,11 @@ Dice syntax is loosely based on [CritDice](https://www.critdice.com/roll-advance
 d4 * 3: Same as above, leaving out the number of dice will default to 1
 ```
 
-You get the idea. Spaces are optional and can actually be inserted anywhere in the rolls. `1 5 d 2 0 + 3 5` actually works. Additionally, operators do not follow PEMDAS and are instead evaluated left to right. 
+You get the idea. Spaces are optional and can actually be inserted anywhere in the rolls. `1 5 d 2 0 + 3 5` actually works. Operators follow PEMDAS and adding parentheses is supported. 
+EG: 
+```
+roll_dice('2*3+5') #Will return 11, following pemdas
+roll_dice('2*(3+5)') #Will return 16, using parentheses
 
 #### Advanced syntax:
 
@@ -88,6 +92,15 @@ Penetrating dice are the same as exploding dice except all rolls from explosions
 d20!>10: Roll a d20 and penetrate every time a number higher than 10 is rolled
 3d12!<2: Roll 3d12 and penetrate every time a 1 is rolled.
 ```
+
+##### Individual modifiers (a, s, m):
+Add, subtract, or multiply each individual dice roll.
+```
+2d20a3: Add three to each roll
+4d12s4: Subtract four from each roll
+6d4m3: Multiply each roll by 3
+```
+
 ## Dicebag Class:
 
 The dicebag class provides an easy way to store a certain roll and reroll it. 
