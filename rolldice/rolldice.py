@@ -164,22 +164,28 @@ def roll_dice(roll):
     Rolls dice in dice notation with advanced syntax used according to tinyurl.com/pydice
 
     :param roll: Roll in dice notation
-    :return:
+    :return: Result of roll, and an explanation string
     """
     roll = ''.join(roll.split())
-    roll = zero_width_split(r'((?<=[\+*-])(?=[^\(\)\+*-]))|((?<=[^\(\)\+*-])(?=[\+*-]))', roll)  # Split the string on the boundary between +-* characters and every other character
+    roll = zero_width_split(r'((?<=[+*-])(?=[^+*-]))|((?<=[^+*-])(?=[+*-]))|((?<=[\(\)])(?=[^\(\)]))|((?<=[^\(\)])(?=[\(\)]))', roll)  # Split the string on the boundary between +-* characters and every other character
 
     string = []
 
-    roll_groups, ops = unzip(roll)
-
-    try:
-        assert len(roll_groups) == len(ops) + 1
-    except AssertionError:
-        raise DiceOperatorException('Too many terms in the dice roll.')
     results = []
 
-    for group in roll_groups:
+    for group in roll:
+        if group in '+-*':
+            results.append(group)
+            string.append(' %s ' % group)
+            continue
+        elif group == '(':
+            results.append(group)
+            string.append(' %s' % group)
+            continue
+        elif group == ')':
+            results.append(group)
+            string.append('%s ' % group)
+            continue
         try:
             explode = regex.match(r'^((\d*)d(\d+))!$', group)  # Regex for exploding dice, ie. 2d10!, 4d100!, d12!, etc.
 
@@ -513,19 +519,12 @@ def roll_dice(roll):
 
         string.append('(%s)' % roll)
 
-    sum_of_dice = results[0]  # Start the sum by taking the first term as positive
-    for i, result in enumerate(
-            results[1:]):  # For each term after that, add, subtract, or multiply depending on what the operator is
-        if ops[i] == '+':
-            sum_of_dice += result
-        elif ops[i] == '-':
-            sum_of_dice -= result
-        elif ops[i] == '*':
-            sum_of_dice *= result
-        else:
-            raise DiceOperatorException('Invalid operator. Please only use +, -, and *')
+    final_result = eval(''.join([str(x) for x in results]))
 
-    explanation = join_on_list(ops, string)  # Re-add in the operators.
+    print(string)
 
-    return sum_of_dice, explanation
+    explanation = ''.join(string)
+    explanation = explanation.strip()
+
+    return final_result, explanation
 
