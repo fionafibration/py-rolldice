@@ -587,21 +587,17 @@ def roll_dice(roll):
                 for i, j in enumerate(group_result): #add to each roll
                     if individual[4] == 'a':
                         result.append(j + int(individual[5]))
-                        op = '+'
 
                     elif individual[4] == 's':
                         result.append(j - int(individual[5]))
-                        op = '-'
                         
                     elif individual[4] == 'm':
                         result.append(j * int(individual[5]))
-                        op = '*'
                         
                     else:
-                        op = None # Only to stop PyCharm from complaining
                         raise ValueError
                 results.append(sum(result))
-                roll = ','.join([str(x) + op + individual[5] for x in group_result]) #Create string with the modifier on each roll
+                roll = ','.join([str(x) + individual[4] + individual[5] for x in group_result]) #Create string with the modifier on each roll
                 string.append('(%s)' % roll)
                 
             elif normal is not None:
