@@ -489,9 +489,10 @@ def roll_dice(roll):
             raise DiceGroupException('"%s" is not a valid dicegroup.' % group)
         
         string.append('(%s)' % roll)
-
-    final_result = eval(''.join([str(x) for x in results]))
-
+    try:        
+        final_result = eval(''.join([str(x) for x in results]))
+    except Exception:
+        raise DiceOperatorException('Error parsing operators.')
     #Create explanation string and remove extraneous spaces
     explanation = ''.join(string)
     explanation = explanation.strip()
