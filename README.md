@@ -101,6 +101,14 @@ Add, subtract, or multiply each individual dice roll.
 6d4m3: Multiply each roll by 3
 ```
 
+##### Reroll on number (R or r):
+Reroll on 1, a specific number, or a comparison. R to reroll until condition is not met and r to reroll just once.
+```
+4d20R: Reroll until there are no ones
+5d6r6: Reroll once on a 6
+7d12R>4: Reroll until there are no numbers above 4
+``` 
+
 ## Dicebag Class:
 
 The dicebag class provides an easy way to store a certain roll and reroll it. 

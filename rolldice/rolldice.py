@@ -28,6 +28,7 @@ class DiceBag:
 
         :param roll: Roll to initialize with or if no roll is supplied, '0'
         """
+        self._roll = None
         self.roll = roll
         self._lastroll = None
 
@@ -43,11 +44,9 @@ class DiceBag:
     def __call__(self, *args, **kwargs):  # Allow for calling the object, same thing as self.roll_dice
         """
         Just call the roll_dice function with all args transferred over
-        :param args: Args
-        :param kwargs: Kwargs
         :return: Roll result
         """
-        return self.roll_dice(*args, **kwargs)
+        return self.roll_dice()
 
     @property
     def roll(self):  # Standard getter
@@ -141,22 +140,15 @@ def roll_dice(roll):
     :return: Result of roll, and an explanation string
     """
     roll = ''.join(roll.split())
-    roll = zero_width_split(r'((?<=[\(\)+*-])(?=.))|((?<=.)(?=[\(\)+*-]))', roll)  # Split the string on the boundary between +-* characters and every other character
+    roll = roll.replace('%', '100')
+    roll = zero_width_split(r'((?<=[\(\)+*-])(?=.))|((?<=.)(?=[\(\)+*-]))', roll)  # Split the string on the boundary between operators and other chars
 
     string = []
 
     results = []
 
     for group in roll:
-        if group in '+-*': #Append operators and make sure spacing is right.
-            results.append(group)
-            string.append(group)
-            continue
-        elif group == '(':
-            results.append(group)
-            string.append(group)
-            continue
-        elif group == ')':
+        if group in '()+-*': #Append operators without modification
             results.append(group)
             string.append(group)
             continue
@@ -172,6 +164,12 @@ def roll_dice(roll):
             specific_penetrate = regex.match(r'^((\d*)d(\d+))!p(\d+)$', group, regex.IGNORECASE)  # See above
 
             comparison_penetrate = regex.match(r'^((\d*)d(\d+))!p([<>])(\d+)$', group, regex.IGNORECASE)  # See above
+
+            reroll = regex.match(r'^((\d*)d(\d+))([Rr])$', group, regex.IGNORECASE) # Reroll on a one, matches 1d6R, 4d12r, etc.
+
+            specific_reroll = regex.match(r'^((\d*)d(\d+))([Rr])(\d+)$', group, regex.IGNORECASE) # Reroll on a specific number
+
+            comparison_reroll =  regex.match(r'^((\d*)d(\d+))([Rr])([<>])(\d+)$', group, regex.IGNORECASE) # Reroll on a comparison
 
             success_comparison = regex.match(r'^((?:\d*)d(\d+))([<>])(\d+)$', group, regex.IGNORECASE)  # Regex for dice with comparison, ie. 2d10>4, 5d3<2, etc.
 
@@ -195,9 +193,9 @@ def roll_dice(roll):
                 result.extend(last_result)
                 number_to_roll = num_equal(last_result, '=', type_of_dice)
                 while number_to_roll != 0:
-                    last_result = roll_group(str(number_to_roll) + 'd' + str(type_of_dice))
+                    last_result = roll_group(str(number_to_roll) + 'd' + str(type_of_dice)) # Reroll dice
                     result.extend(last_result)
-                    number_to_roll = num_equal(last_result, '=', type_of_dice)
+                    number_to_roll = num_equal(last_result, '=', type_of_dice) # Check how many dice we have to reroll again
 
                 results.append(sum(result))
                 roll = ','.join([('!' + str(i) if i == type_of_dice else str(i)) for i in result])  # Build a string of the dice rolls, adding an exclamation mark before every roll that resulted in an explosion.
@@ -324,6 +322,8 @@ def roll_dice(roll):
                 result = []
                 last_result = roll_group(comparison_penetrate[1])
                 result.extend(last_result)
+
+                # Do penetration based on more than or less than sign.
                 if comparison_penetrate[4] == '>':
                     number_to_roll = num_equal(last_result, '>', comparator)
                     while number_to_roll != 0:
@@ -355,7 +355,136 @@ def roll_dice(roll):
                     roll += ','.join(
                         [('!' + str(i) + '-1' if i < comparator else str(i) + '-1') for i in result[first_num:]])
                 string.append('(%s)' % roll)
-                
+
+            elif reroll is not None:  # Handle rerolling dice without a comparison modifier (ie. on 1)
+                type_of_dice = int(reroll[3])
+
+                result_strings = []
+                roll_strings = []
+                result = roll_group(reroll[1])
+                repeat = True if reroll[4] == 'R' else False # Reroll just once or infinite number of times
+
+                if repeat: #Handle rerolling the dice and building a string of all the rerolled ones
+                    for i in range(len(result)):
+                        prev = [result[i]]
+                        while result[i] == 1:
+                            result[i] = random.randint(1, type_of_dice)
+                            prev.append(result[i])
+
+                        roll_strings.append([str(x) for x in prev])
+
+                else:
+                    for i in range(len(result)):
+                        prev = [result[i]]
+                        if result[i] == 1:
+                            result[i] = random.randint(1, type_of_dice)
+                            prev.append(result[i])
+
+                        roll_strings.append([str(x) for x in prev])
+
+                results.append(sum(result))
+                for roll_string in roll_strings:
+                    roll_string.reverse()
+                    result_strings.append('%s' % roll_string[0] + ('.' if len(roll_string) > 1 else '') + '.'.join(roll_string[1:])) #Build the string
+
+                roll = ','.join(result_strings)
+                string.append('(%s)' % roll)
+
+            elif specific_reroll is not None:  # Handle rerolling dice on a specific number, see reroll
+                type_of_dice = int(specific_reroll[3])
+                comparator = int(specific_reroll[5])
+
+                assert 0 < comparator <= type_of_dice # Ensure comparison is within bounds
+
+                result_strings = []
+                roll_strings = []
+                result = roll_group(specific_reroll[1])
+                repeat = True if specific_reroll[4] == 'R' else False
+
+                if repeat:
+                    for i in range(len(result)):
+                        prev = [result[i]]
+                        while result[i] == comparator:
+                            result[i] = random.randint(1, type_of_dice)
+                            prev.append(result[i])
+
+                        roll_strings.append([str(x) for x in prev])
+
+                else:
+                    for i in range(len(result)):
+                        prev = [result[i]]
+                        if result[i] == comparator:
+                            result[i] = random.randint(1, type_of_dice)
+                            prev.append(result[i])
+
+                        roll_strings.append([str(x) for x in prev])
+
+                results.append(sum(result))
+                for roll_string in roll_strings:
+                    roll_string.reverse()
+                    result_strings.append('%s' % roll_string[0] + ('.' if len(roll_string) > 1 else '') + '.'.join(roll_string[1:]))
+
+                roll = ','.join(result_strings)
+                string.append('(%s)' % roll)
+
+            elif comparison_reroll is not None:  # Handle rerolling dice with a comparison modifier.
+                type_of_dice = int(comparison_reroll[3])
+                comparator = int(comparison_reroll[6])
+
+                if comparison_reroll[5] == '>':  # Ensure comparison is within bounds
+                    assert 0 < comparator < type_of_dice
+                else:
+                    assert 1 < comparator <= type_of_dice
+
+                result_strings = []
+                roll_strings = []
+                result = roll_group(comparison_reroll[1])
+                repeat = True if comparison_reroll[4] == 'R' else False
+                if comparison_reroll[5] == '>':
+                    if repeat:
+                        for i in range(len(result)):
+                            prev = [result[i]]
+                            while result[i] > comparator:
+                                result[i] = random.randint(1, type_of_dice)
+                                prev.append(result[i])
+
+                            roll_strings.append([str(x) for x in prev])
+
+                    else:
+                        for i in range(len(result)):
+                            prev = [result[i]]
+                            if result[i] > comparator:
+                                result[i] = random.randint(1, type_of_dice)
+                                prev.append(result[i])
+
+                            roll_strings.append([str(x) for x in prev])
+                else:
+                    if repeat:
+                        for i in range(len(result)):
+                            prev = [result[i]]
+                            while result[i] < comparator:
+                                result[i] = random.randint(1, type_of_dice)
+                                prev.append(result[i])
+
+                            roll_strings.append([str(x) for x in prev])
+
+                    else:
+                        for i in range(len(result)):
+                            prev = [result[i]]
+                            if result[i] < comparator:
+                                result[i] = random.randint(1, type_of_dice)
+                                prev.append(result[i])
+
+                            roll_strings.append([str(x) for x in prev])
+
+                results.append(sum(result))
+                for roll_string in roll_strings:
+                    roll_string.reverse()
+                    result_strings.append('%s' % roll_string[0] + ('.' if len(roll_string) > 1 else '') + '.'.join(roll_string[1:]))
+
+                roll = ','.join(result_strings)
+                string.append('(%s)' % roll)
+
             elif success_comparison is not None:
                 group_result = roll_group(success_comparison[1])
                 result = []
@@ -469,6 +598,7 @@ def roll_dice(roll):
                         op = '*'
                         
                     else:
+                        op = None # Only to stop PyCharm from complaining
                         raise ValueError
                 results.append(sum(result))
                 roll = ','.join([str(x) + op + individual[5] for x in group_result]) #Create string with the modifier on each roll
