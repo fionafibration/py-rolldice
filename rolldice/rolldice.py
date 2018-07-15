@@ -141,7 +141,7 @@ def roll_dice(roll):
     :return: Result of roll, and an explanation string
     """
     roll = ''.join(roll.split())
-    roll = zero_width_split(r'((?<=[+*-])(?=[^+*-]))|((?<=[^+*-])(?=[+*-]))|((?<=[\(\)])(?=[^\(\)]))|((?<=[^\(\)])(?=[\(\)]))', roll)  # Split the string on the boundary between +-* characters and every other character
+    roll = zero_width_split(r'((?<=[\(\)+*-])(?=.))|((?<=.)(?=[\(\)+*-]))', roll)  # Split the string on the boundary between +-* characters and every other character
 
     string = []
 
