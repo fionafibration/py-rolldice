@@ -29,7 +29,7 @@ EG:
 ```
 roll_dice('2*3+5') #Will return 11, following pemdas
 roll_dice('2*(3+5)') #Will return 16, using parentheses
-
+```
 #### Advanced syntax:
 
 ##### Keep Highest (K):
