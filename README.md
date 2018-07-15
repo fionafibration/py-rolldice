@@ -131,5 +131,5 @@ That's all there is to it!
 - [X] Count failures as in CritDice syntax
 - [X] Penetrating dice
 - [X] DiceBag object for repeating dice rolls and storing as an object.
-- [ ] Rerolling once or arbitrary number of times on a given condition
+- [X] Rerolling once or arbitrary number of times on a given condition
 

@@ -385,7 +385,7 @@ def roll_dice(roll):
                 results.append(sum(result))
                 for roll_string in roll_strings:
                     roll_string.reverse()
-                    result_strings.append('%s' % roll_string[0] + ('.' if len(roll_string) > 1 else '') + '.'.join(roll_string[1:])) #Build the string
+                    result_strings.append('%s' % roll_string[0] + ('~' if len(roll_string) > 1 else '') + '~'.join(roll_string[1:])) #Build the string
 
                 roll = ','.join(result_strings)
                 string.append('(%s)' % roll)
@@ -422,7 +422,7 @@ def roll_dice(roll):
                 results.append(sum(result))
                 for roll_string in roll_strings:
                     roll_string.reverse()
-                    result_strings.append('%s' % roll_string[0] + ('.' if len(roll_string) > 1 else '') + '.'.join(roll_string[1:]))
+                    result_strings.append('%s' % roll_string[0] + ('~' if len(roll_string) > 1 else '') + '~'.join(roll_string[1:]))
 
                 roll = ','.join(result_strings)
                 string.append('(%s)' % roll)
@@ -480,7 +480,7 @@ def roll_dice(roll):
                 results.append(sum(result))
                 for roll_string in roll_strings:
                     roll_string.reverse()
-                    result_strings.append('%s' % roll_string[0] + ('.' if len(roll_string) > 1 else '') + '.'.join(roll_string[1:]))
+                    result_strings.append('%s' % roll_string[0] + ('~' if len(roll_string) > 1 else '') + '~'.join(roll_string[1:]))
 
                 roll = ','.join(result_strings)
                 string.append('(%s)' % roll)
