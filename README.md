@@ -22,6 +22,7 @@ Dice syntax is loosely based on [CritDice](https://www.critdice.com/roll-advance
 2d20 - 3: Roll a 20 sided die 2 times and subtract 3
 1d4 * 3: Roll a 4 sided die once and multiply by 3
 d4 * 3: Same as above, leaving out the number of dice will default to 1
+5d6 / 3: Roll 5d6 and divide by 3, rounding down
 ```
 
 You get the idea. Spaces are optional and can actually be inserted anywhere in the rolls. `1 5 d 2 0 + 3 5` actually works. Operators follow PEMDAS and adding parentheses is supported. 
