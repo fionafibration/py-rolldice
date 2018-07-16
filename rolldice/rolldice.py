@@ -5,11 +5,13 @@
 py-dice-roll
 Created by Finianb1
 https://github.com/ThePlasmaRailgun/py-dice-roll/
+Math parser thanks to louisfisch on GitHub
+https://github.com/louisfisch/mathematical-expressions-parser
 """
 
+import math
 import random
 import regex
-import mathparser
 
 
 class DiceGroupException(Exception):  # Exception for when dice group is malformed, ie '12d6>7!'
@@ -20,6 +22,152 @@ class DiceGroupException(Exception):  # Exception for when dice group is malform
 class DiceOperatorException(Exception):  # Exception for when incorrect or malformed operators are used between dice, ie '3d4 + -200'
     def __init__(self, *args, **kwargs):
         Exception.__init__(self, *args, **kwargs)
+
+_FUNCTIONS = { # Extensible to allow calling more functions by adding a string name
+    # And the actual function object
+    'abs': abs,
+}
+
+class Parser:
+    def __init__(self, string): # Initialize by starting at index 0
+        self.string = string
+        self.index = 0
+
+    def __call__(self): # Main function of the parser, parses the string and returns the value
+        value = self.parseExpression()
+        
+        if self.hasNext():
+            raise Exception(
+                "Unexpected character found: '" + self.peek() + "' at index " + str(self.index)
+            )
+        return int(value)
+
+    def peek(self): # Look at the next char in the string
+        return self.string[self.index:self.index + 1]
+
+    def hasNext(self): # Checks whether there's more chars
+        return self.index < len(self.string)
+
+    # This is kind of reversed PEMDAS
+    # Starts at addition, addition calls multiplication, etc.
+    def parseExpression(self): 
+        return self.parseAddition()
+
+    def parseAddition(self): #Parse addition and subtraction
+        values = [self.parseMultiplication()]
+        
+        while True:
+            char = self.peek()
+            
+            if char == '+':
+                self.index += 1
+                values.append(self.parseMultiplication())
+            elif char == '-':
+                self.index += 1
+                values.append(-1 * self.parseMultiplication())
+            else:
+                break
+        
+        return sum(values)
+
+    def parseMultiplication(self): #Parse multiplication and division (floor)
+        values = [self.parseParenthesis()]
+            
+        while True:
+            char = self.peek()
+                
+            if char == '*':
+                self.index += 1
+                values.append(self.parseParenthesis())
+            elif char == '/':
+                div_index = self.index
+                self.index += 1
+                denominator = self.parseParenthesis()
+                     
+                if denominator == 0:
+                    raise Exception(
+                        "Division by 0 (occured at index " + str(div_index) + ")"
+                    )
+                values.append(1.0 / denominator) # Division
+            else:
+                break
+                     
+        value = 1 # Not a float so division doesn't ever return a float
+        
+        for factor in values: # Multiply up all the factors
+            value *= factor
+        return value
+
+    def parseParenthesis(self): # Parse any values inside parentheses
+        char = self.peek()
+        
+        if char == '(':
+            self.index += 1
+            value = self.parseExpression()
+            
+            if self.peek() != ')':
+                raise Exception("No closing parenthesis found at character " + str(self.index))
+            self.index += 1
+            return value
+        else:
+            return self.parseNegative()
+
+    def parseNegative(self): # Parse possible negative integers
+        char = self.peek()
+        
+        if char == '-':
+            self.index += 1
+            return -1 * self.parseParenthesis()
+        else:
+            return self.parseValue()
+
+    def parseValue(self): # Parse a number literal or a 'variable', which for our purposes is only a function
+        char = self.peek()
+        
+        if char in '0123456789':
+            return self.parseNumber()
+        else:
+            return self.parseVariable()
+ 
+    def parseVariable(self): # Parse a function literal. May be expanded to variables
+        var = []
+        while self.hasNext():
+            char = self.peek()
+            
+            if char.lower() in 'abcdefghijklmnopqrstuvwxyz':
+                var.append(char)
+                self.index += 1
+            else:
+                break
+        var = ''.join(var)
+        
+        function = _FUNCTIONS.get(var.lower())
+        if function != None:
+            arg = self.parseParenthesis()
+            return int(function(arg))
+            
+        raise Exception("Unrecognized variable: '" + var + "'")
+
+    def parseNumber(self): # Parse a numerical literal
+        strValue = ''
+        char = ''
+
+        while self.hasNext():
+            char = self.peek()
+            
+            if char in '0123456789':
+                strValue += char
+            else:
+                break
+            self.index += 1
+
+        if len(strValue) == 0:
+            if char == '':
+                raise Exception("Unexpected end found")
+            else:
+                raise Exception("Expecting to find a number at " + str(self.index) + " but instad found '" + char + "'")
+            
+        return int(strValue)
 
 
 class DiceBag:
@@ -153,7 +301,7 @@ def roll_dice(roll):
             results.append(group)
             string.append(group)
             continue
-        elif group in mathparser._FUNCTIONS.keys():
+        if group in _FUNCTIONS.keys():
             results.append(group)
             string.append(group)
             continue
@@ -204,7 +352,7 @@ def roll_dice(roll):
 
                 results.append(sum(result))
                 roll = ','.join([('!' + str(i) if i == type_of_dice else str(i)) for i in result])  # Build a string of the dice rolls, adding an exclamation mark before every roll that resulted in an explosion.
-                string.append('(%s)' % roll)
+                string.append('[%s]' % roll)
                 
             elif specific_explode is not None:  # Handle exploding dice without a comparison modifier.
                 type_of_dice = int(specific_explode[3])
@@ -224,7 +372,7 @@ def roll_dice(roll):
 
                 results.append(sum(result))
                 roll = ','.join([('!' + str(i) if i == comparator else str(i)) for i in result])  # Build a string of the dice rolls, adding an exclamation mark before every roll that resulted in an explosion.
-                string.append('(%s)' % roll)
+                string.append('[%s]' % roll)
     
             elif comparison_explode is not None:  # Handle exploding dice with a comparison modifier
                 type_of_dice = int(comparison_explode[3])
@@ -258,7 +406,7 @@ def roll_dice(roll):
                                      result])  # Same as on other explodes except with a > or < comparison
 
                 results.append(sum(result))
-                string.append('(%s)' % roll)
+                string.append('[%s]' % roll)
             
             elif penetrate is not None:  # Handle penetrating dice without a comparison modifier.
                 type_of_dice = int(penetrate[3])
@@ -282,7 +430,7 @@ def roll_dice(roll):
                 roll = ','.join(['!' + str(i) if i == type_of_dice else str(i) for i in result[:first_num]])  # Add the first numbers, without the -1 but with a ! when roll is penetration
                 roll += (',' if len(pre_result) > first_num else '')  # Only add the comma in between if there's at least one penetration
                 roll += ','.join([('!' + str(i) + '-1' if i == type_of_dice else str(i) + '-1') for i in result[first_num:]])  # Add the penetration dice with the '-1' tacked on the end
-                string.append('(%s)' % roll)
+                string.append('[%s]' % roll)
         
             elif specific_penetrate is not None:  # Handle penetrating dice without a comparison modifier.
                 type_of_dice = int(specific_penetrate[3])
@@ -310,7 +458,7 @@ def roll_dice(roll):
                 roll = ','.join(['!' + str(i) if i == comparator else str(i) for i in result[:first_num]])  # Same as above
                 roll += (',' if len(pre_result) > first_num else '')
                 roll += ','.join([('!' + str(i) + '-1' if i == comparator else str(i) + '-1') for i in result[first_num:]])
-                string.append('(%s)' % roll)
+                string.append('[%s]' % roll)
                 
             elif comparison_penetrate is not None:  # Handle penetrating dice without a comparison modifier.
                 type_of_dice = int(comparison_penetrate[3])
@@ -359,7 +507,7 @@ def roll_dice(roll):
                     roll += (',' if len(pre_result) > first_num else '')
                     roll += ','.join(
                         [('!' + str(i) + '-1' if i < comparator else str(i) + '-1') for i in result[first_num:]])
-                string.append('(%s)' % roll)
+                string.append('[%s]' % roll)
 
             elif reroll is not None:  # Handle rerolling dice without a comparison modifier (ie. on 1)
                 type_of_dice = int(reroll[3])
@@ -393,7 +541,7 @@ def roll_dice(roll):
                     result_strings.append('%s' % roll_string[0] + ('~' if len(roll_string) > 1 else '') + '~'.join(roll_string[1:])) #Build the string
 
                 roll = ','.join(result_strings)
-                string.append('(%s)' % roll)
+                string.append('[%s]' % roll)
 
             elif specific_reroll is not None:  # Handle rerolling dice on a specific number, see reroll
                 type_of_dice = int(specific_reroll[3])
@@ -430,7 +578,7 @@ def roll_dice(roll):
                     result_strings.append('%s' % roll_string[0] + ('~' if len(roll_string) > 1 else '') + '~'.join(roll_string[1:]))
 
                 roll = ','.join(result_strings)
-                string.append('(%s)' % roll)
+                string.append('[%s]' % roll)
 
             elif comparison_reroll is not None:  # Handle rerolling dice with a comparison modifier.
                 type_of_dice = int(comparison_reroll[3])
@@ -488,7 +636,7 @@ def roll_dice(roll):
                     result_strings.append('%s' % roll_string[0] + ('~' if len(roll_string) > 1 else '') + '~'.join(roll_string[1:]))
 
                 roll = ','.join(result_strings)
-                string.append('(%s)' % roll)
+                string.append('[%s]' % roll)
 
             elif success_comparison is not None:
                 group_result = roll_group(success_comparison[1])
@@ -514,7 +662,7 @@ def roll_dice(roll):
 
                 results.append(sum(result))
                 roll = ','.join(result_string)  # Craft the string, adding an exclamation mark before every string that passed the comparison.
-                string.append('(%s)' % roll)
+                string.append('[%s]' % roll)
                 
             elif success_fail_comparison is not None:
                 group_result = roll_group(success_fail_comparison[1])
@@ -558,7 +706,7 @@ def roll_dice(roll):
 
                 results.append(sum(result))  #
                 roll = ','.join(result_string)
-                string.append('(%s)' % roll)
+                string.append('[%s]' % roll)
                 
             elif keep is not None:  # Handle rolling dice and keeping the x highest or lowest values
                 group_result = roll_group(keep[1])
@@ -572,7 +720,7 @@ def roll_dice(roll):
                 roll = ','.join([str(i) for i in group_result[
                                                  :num_to_keep]]) + ' ~~ '  # This time format the string with all kept rolls on the left and dropped rolls on the right
                 roll += ','.join([str(i) for i in group_result[num_to_keep:]])
-                string.append('(%s)' % roll)
+                string.append('[%s]' % roll)
                 
             elif drop is not None:
                 group_result = roll_group(drop[1])
@@ -584,7 +732,7 @@ def roll_dice(roll):
                 results.append(sum(group_result[:num_to_drop]))
                 roll = ','.join([str(i) for i in group_result[num_to_drop:]]) + ' ~~ '  # Same as above.
                 roll += ','.join([str(i) for i in group_result[:num_to_drop]])
-                string.append('(%s)' % roll)
+                string.append('[%s]' % roll)
                 
             elif individual is not None:
                 group_result = roll_group(individual[1])
@@ -603,13 +751,13 @@ def roll_dice(roll):
                         raise ValueError
                 results.append(sum(result))
                 roll = ','.join([str(x) + individual[4] + individual[5] for x in group_result]) #Create string with the modifier on each roll
-                string.append('(%s)' % roll)
+                string.append('[%s]' % roll)
                 
             elif normal is not None:
                 group_result = roll_group(group)
                 results.append(sum(group_result))
                 roll = ','.join([str(i) for i in group_result])
-                string.append('(%s)' % roll)
+                string.append('[%s]' % roll)
                 
             elif literal is not None:
                 results.append(int(literal[1]))  # Just append the integer value
@@ -622,7 +770,7 @@ def roll_dice(roll):
         except Exception:
             raise DiceGroupException('"%s" is not a valid dicegroup.' % group)
         
-    parser = mathparser.Parser(''.join([str(x) for x in results])) #The parser object parses the dice rolls and functions
+    parser = Parser(''.join([str(x) for x in results])) #The parser object parses the dice rolls and functions
     try:        
         final_result = parser() #Call the parser to parse into one value
     except Exception:
