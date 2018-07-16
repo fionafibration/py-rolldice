@@ -9,6 +9,7 @@ https://github.com/ThePlasmaRailgun/py-dice-roll/
 
 import random
 import regex
+import mathparser
 
 
 class DiceGroupException(Exception):  # Exception for when dice group is malformed, ie '12d6>7!'
@@ -149,6 +150,10 @@ def roll_dice(roll):
 
     for group in roll:
         if group in '()+-*': #Append operators without modification
+            results.append(group)
+            string.append(group)
+            continue
+        elif group in mathparser._FUNCTIONS.keys():
             results.append(group)
             string.append(group)
             continue
@@ -617,15 +622,15 @@ def roll_dice(roll):
         except Exception:
             raise DiceGroupException('"%s" is not a valid dicegroup.' % group)
         
-        
+    parser = mathparser.Parser(''.join([str(x) for x in results])) #The parser object parses the dice rolls and functions
     try:        
-        final_result = eval(''.join([str(x) for x in results]))
+        final_result = parser() #Call the parser to parse into one value
     except Exception:
-        raise DiceOperatorException('Error parsing operators.')
+        raise DiceOperatorException('Error parsing operators and or functions')
     
     #Create explanation string and remove extraneous spaces
     explanation = ''.join(string)
-    explanation = zero_width_split(r'((?<=[+*-])(?=.))|((?<=.)(?=[+*-]))', explanation)
+    explanation = zero_width_split(r'((?<=[+*-])(?=.))|((?<=.)(?=[+*-]))', explanation) #Split on operators to add spaces
     explanation = ' '.join(explanation)
     explanation = explanation.strip()
     explanation = regex.sub(r'[ \t]{2,}', ' ', explanation)
