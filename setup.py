@@ -1,5 +1,5 @@
 import setuptools
-import pypandoc
+
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
