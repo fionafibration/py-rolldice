@@ -129,7 +129,7 @@ dicebag = DiceBag('12d6 + 2d20K') #Initializes with a roll of '12d6 + 2d20K'
 result, explanation = dicebag.roll_dice() #Repeat as needed
 
 # The last roll is also stored in dicebag.lastroll
-assert result = dicebag.lastroll[0] and explanation = dicebag.lastroll[1]
+assert result = dicebag.last_roll and explanation = dicebag.last_explanation
 ```
 That's all there is to it!
 
@@ -140,6 +140,6 @@ That's all there is to it!
 - [X] DiceBag object for repeating dice rolls and storing as an object.
 - [X] Rerolling once or arbitrary number of times on a given condition
 - [X] Parse PEMDAS properly
-- [X] Safe mathematical parser 
+- [X] Safe mathematical parser  
 ## Suggestions
 If you have any other ideas for features, just make a suggestion and I'll see what I can do!
