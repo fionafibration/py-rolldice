@@ -238,21 +238,26 @@ class DiceBag:
         :param roll: Roll to initialize with or if no roll is supplied, '0'
         """
         self._roll = None
-        self.roll = roll
-        self._lastroll = None
+        self._last_roll = None
+        self._last_explanation = None
 
+        self.roll = roll
+    
     def roll_dice(self):  # Roll dice with current roll
         """
         Rolls dicebag and sets lastroll to roll results
 
         :return: Roll results.
         """
-        self._lastroll = roll_dice(self.roll)
-        return self.lastroll
+        roll = roll_dice(self.roll)
+        self._last_roll = roll[0]
+        self._last_explanation = roll[1]
+        return (self.last_roll, self.last_explanation)
 
-    def __call__(self, *args, **kwargs):  # Allow for calling the object, same thing as self.roll_dice
+    def __call__(self):  # Allow for calling the object, same thing as self.roll_dice
         """
-        Just call the roll_dice function with all args transferred over
+        Just call the roll_dice method.
+        
         :return: Roll result
         """
         return self.roll_dice()
@@ -261,6 +266,7 @@ class DiceBag:
     def roll(self):  # Standard getter
         """
         Standard getter for roll
+        
         :return: Roll
         """
         return self._roll
@@ -269,6 +275,7 @@ class DiceBag:
     def roll(self, value):
         """
         Setter for roll, verifies the roll is valid
+        
         :param value: Roll
         """
         if type(value) != str:  # Make sure dice roll is a str
@@ -281,12 +288,22 @@ class DiceBag:
             self._roll = value
 
     @property
-    def lastroll(self):  # Only getter, lastroll should be read-only.
+    def last_roll(self):
         """
-        Standard getter. Should make lastroll read-only.
+        Standard getter. Makes last_roll read-only.
+        
         :return:
         """
-        return self._lastroll
+        return self._last_roll
+    
+    @property
+    def last_explanation(self):
+        """
+        Standard getter. Makes last_explanation read-only.
+        
+        :return:
+        """
+        return self._last_explanation
 
 
 def zero_width_split(pattern, string):
