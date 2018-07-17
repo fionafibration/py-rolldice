@@ -15,7 +15,7 @@ That's it. The function takes the string representation of your dice roll and wi
 
 ## Dice Syntax:
 
-Dice syntax is loosely based on [CritDice](https://www.critdice.com/roll-advanced-dice/) syntax.  
+Dice syntax is based on [CritDice](https://www.critdice.com/roll-advanced-dice/) syntax.  
 #### Basic syntax:
 ```
 4d10 + 17: Roll a 10-sided die 4 times and add 17 to the result
@@ -25,12 +25,18 @@ d4 * 3: Same as above, leaving out the number of dice will default to 1
 5d6 / 3: Roll 5d6 and divide by 3, rounding down
 ```
 
-You get the idea. Spaces are optional and can actually be inserted anywhere in the rolls. `1 5 d 2 0 + 3 5` actually works. Operators follow PEMDAS and adding parentheses is supported. 
+You get the idea. Spaces are optional and can actually be inserted anywhere in the rolls. `1 5 d 2 0 + 3 5` actually works. Operators follow PEMDAS and parentheses are supported. Exponents are not supported.
 EG: 
 ```
-roll_dice('2*3+5') #Will return 11, following pemdas
-roll_dice('2*(3+5)') #Will return 16, using parentheses
+roll_dice('2*3+5') #Will return 11, following PEMDAS
+roll_dice('2*(3+5)') #Will return 16, using parentheses precedence
 ```
+Additionally, the module supports the absolute value function:
+```
+roll_dice('abs(2d6-7)')
+roll_dice('5-abs(2d20-20)')
+```
+Other functions may be added.  
 #### Advanced syntax:
 
 ##### Keep Highest (K):
@@ -133,4 +139,7 @@ That's all there is to it!
 - [X] Penetrating dice
 - [X] DiceBag object for repeating dice rolls and storing as an object.
 - [X] Rerolling once or arbitrary number of times on a given condition
-
+- [X] Parse PEMDAS properly
+- [X] Safe mathematical parser 
+## Suggestions
+If you have any other ideas for features, just make a suggestion and I'll see what I can do!
