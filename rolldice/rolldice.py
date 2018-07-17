@@ -29,11 +29,21 @@ _FUNCTIONS = { # Extensible to allow calling more functions by adding a string n
 }
 
 class Parser:
-    def __init__(self, string): # Initialize by starting at index 0
+    def __init__(self, string): 
+        """
+        Initialize the parser with an expression
+        
+        :param string: String of expression to parse
+        """
         self.string = string
-        self.index = 0
+        self.index = 0 # Initialize by starting at index 0
 
-    def __call__(self): # Main function of the parser, parses the string and returns the value
+    def __call__(self):
+        """
+        Parse the expression and return the value
+        
+        :return: Value of the expression
+        """
         value = self.parseExpression()
         
         if self.hasNext():
@@ -43,17 +53,37 @@ class Parser:
         return int(value)
 
     def peek(self): # Look at the next char in the string
+        """
+        Look at the next character in the string
+        
+        :return: The next char in the string
+        """
         return self.string[self.index:self.index + 1]
 
-    def hasNext(self): # Checks whether there's more chars
+    def hasNext(self):
+        """
+        Checks whether there are more chars in the expression
+        
+        :return: Boolean of whether there are more chars in the expression
+        """
         return self.index < len(self.string)
 
-    # This is kind of reversed PEMDAS
+    # This is reversed PEMDAS
     # Starts at addition, addition calls multiplication, etc.
-    def parseExpression(self): 
+    def parseExpression(self):
+        """
+        Parse an expression by calling parseAddition()
+        
+        :return: The value of the expression
+        """
         return self.parseAddition()
 
-    def parseAddition(self): #Parse addition and subtraction
+    def parseAddition(self):
+        """
+        Parse addition and subtraction and call parseMultiplication()
+        
+        :return: The value of the expression
+        """
         values = [self.parseMultiplication()]
         
         while True:
@@ -70,7 +100,12 @@ class Parser:
         
         return sum(values)
 
-    def parseMultiplication(self): #Parse multiplication and division (floor)
+    def parseMultiplication(self):
+        """
+        Parse multiplication and division (floor) and call parseParenthesis
+        
+        :return: The value of the expression
+        """
         values = [self.parseParenthesis()]
             
         while True:
@@ -98,7 +133,12 @@ class Parser:
             value *= factor
         return value
 
-    def parseParenthesis(self): # Parse any values inside parentheses
+    def parseParenthesis(self):
+        """
+        Parse expressions in parenthesis or call parseNegative()
+        
+        :return: The value of the expression
+        """
         char = self.peek()
         
         if char == '(':
@@ -112,7 +152,12 @@ class Parser:
         else:
             return self.parseNegative()
 
-    def parseNegative(self): # Parse possible negative integers
+    def parseNegative(self):
+        """
+        Parse integers, negative integers, or negative values in parenthesis
+        
+        :return: The value of the number
+        """
         char = self.peek()
         
         if char == '-':
@@ -121,7 +166,12 @@ class Parser:
         else:
             return self.parseValue()
 
-    def parseValue(self): # Parse a number literal or a 'variable', which for our purposes is only a function
+    def parseValue(self):
+        """
+        Parse a number literal or a 'variable', which for our purposes is only a function
+        
+        :return: The value of the literal or function call
+        """
         char = self.peek()
         
         if char in '0123456789':
@@ -129,7 +179,12 @@ class Parser:
         else:
             return self.parseVariable()
  
-    def parseVariable(self): # Parse a function literal. May be expanded to variables
+    def parseVariable(self):
+        """
+        Parse a function literal
+        
+        :return: The result of the function call
+        """
         var = []
         while self.hasNext():
             char = self.peek()
@@ -148,7 +203,12 @@ class Parser:
             
         raise Exception("Unrecognized variable: '" + var + "'")
 
-    def parseNumber(self): # Parse a numerical literal
+    def parseNumber(self):
+        """
+        Parse a number literal
+        
+        :return: The number literal's value
+        """
         strValue = ''
         char = ''
 
