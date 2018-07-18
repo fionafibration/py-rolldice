@@ -50,7 +50,7 @@ def lcm(a, b):
     return a * b / gcd(a, b)
 
 
-MAX_POWER = 4000000
+MAX_POWER = 40
 
 def safe_power(a, b):
     """
@@ -171,7 +171,7 @@ class DiceBag:
         self._last_explanation = None
 
         self.roll = roll
-    
+
     def roll_dice(self):  # Roll dice with current roll
         """
         Rolls dicebag and sets lastroll to roll results
@@ -186,7 +186,7 @@ class DiceBag:
     def __call__(self):  # Allow for calling the object, same thing as self.roll_dice
         """
         Just call the roll_dice method.
-        
+
         :return: Roll result
         """
         return self.roll_dice()
@@ -195,7 +195,7 @@ class DiceBag:
     def roll(self):  # Standard getter
         """
         Standard getter for roll
-        
+
         :return: Roll
         """
         return self._roll
@@ -204,7 +204,7 @@ class DiceBag:
     def roll(self, value):
         """
         Setter for roll, verifies the roll is valid
-        
+
         :param value: Roll
         :return: None
         """
@@ -221,16 +221,16 @@ class DiceBag:
     def last_roll(self):
         """
         Standard getter. Makes last_roll read-only.
-        
+
         :return:
         """
         return self._last_roll
-    
+
     @property
     def last_explanation(self):
         """
         Standard getter. Makes last_explanation read-only.
-        
+
         :return:
         """
         return self._last_explanation
@@ -296,7 +296,7 @@ def roll_dice(roll):
     :return: Result of roll, and an explanation string
     """
     roll = ''.join(roll.split())
-    regex.sub(r'(?<=d)(%)', '100', roll)
+    roll = regex.sub(r'(?<=d)%', '100', roll, regex.IGNORECASE)
     roll = zero_width_split(r'((?<=[\(\),%^\/+*-])(?=.))|((?<=.)(?=[\(\),%^\/+*-]))', roll)  # Split the string on the boundary between operators and other chars
 
     string = []
@@ -360,7 +360,7 @@ def roll_dice(roll):
                 results.append(sum(result))
                 roll = ','.join([('!' + str(i) if i == type_of_dice else str(i)) for i in result])  # Build a string of the dice rolls, adding an exclamation mark before every roll that resulted in an explosion.
                 string.append('[%s]' % roll)
-                
+
             elif specific_explode is not None:  # Handle exploding dice without a comparison modifier.
                 type_of_dice = int(specific_explode[3])
 
@@ -380,7 +380,7 @@ def roll_dice(roll):
                 results.append(sum(result))
                 roll = ','.join([('!' + str(i) if i == comparator else str(i)) for i in result])  # Build a string of the dice rolls, adding an exclamation mark before every roll that resulted in an explosion.
                 string.append('[%s]' % roll)
-    
+
             elif comparison_explode is not None:  # Handle exploding dice with a comparison modifier
                 type_of_dice = int(comparison_explode[3])
 
@@ -414,7 +414,7 @@ def roll_dice(roll):
 
                 results.append(sum(result))
                 string.append('[%s]' % roll)
-            
+
             elif penetrate is not None:  # Handle penetrating dice without a comparison modifier.
                 type_of_dice = int(penetrate[3])
 
@@ -438,7 +438,7 @@ def roll_dice(roll):
                 roll += (',' if len(pre_result) > first_num else '')  # Only add the comma in between if there's at least one penetration
                 roll += ','.join([('!' + str(i) + '-1' if i == type_of_dice else str(i) + '-1') for i in result[first_num:]])  # Add the penetration dice with the '-1' tacked on the end
                 string.append('[%s]' % roll)
-        
+
             elif specific_penetrate is not None:  # Handle penetrating dice without a comparison modifier.
                 type_of_dice = int(specific_penetrate[3])
 
@@ -466,7 +466,7 @@ def roll_dice(roll):
                 roll += (',' if len(pre_result) > first_num else '')
                 roll += ','.join([('!' + str(i) + '-1' if i == comparator else str(i) + '-1') for i in result[first_num:]])
                 string.append('[%s]' % roll)
-                
+
             elif comparison_penetrate is not None:  # Handle penetrating dice without a comparison modifier.
                 type_of_dice = int(comparison_penetrate[3])
 
@@ -670,7 +670,7 @@ def roll_dice(roll):
                 results.append(sum(result))
                 roll = ','.join(result_string)  # Craft the string, adding an exclamation mark before every string that passed the comparison.
                 string.append('[%s]' % roll)
-                
+
             elif success_fail_comparison is not None:
                 group_result = roll_group(success_fail_comparison[1])
 
@@ -714,7 +714,7 @@ def roll_dice(roll):
                 results.append(sum(result))  #
                 roll = ','.join(result_string)
                 string.append('[%s]' % roll)
-                
+
             elif keep is not None:  # Handle rolling dice and keeping the x highest or lowest values
                 group_result = roll_group(keep[1])
                 group_result.sort(reverse=True if keep[
@@ -728,7 +728,7 @@ def roll_dice(roll):
                                                  :num_to_keep]]) + ' ~~ '  # This time format the string with all kept rolls on the left and dropped rolls on the right
                 roll += ','.join([str(i) for i in group_result[num_to_keep:]])
                 string.append('[%s]' % roll)
-                
+
             elif drop is not None:
                 group_result = roll_group(drop[1])
                 group_result.sort(reverse=True if drop[2] == 'X' else False)  # Same thing as keep dice
@@ -740,7 +740,7 @@ def roll_dice(roll):
                 roll = ','.join([str(i) for i in group_result[num_to_drop:]]) + ' ~~ '  # Same as above.
                 roll += ','.join([str(i) for i in group_result[:num_to_drop]])
                 string.append('[%s]' % roll)
-                
+
             elif individual is not None:
                 group_result = roll_group(individual[1])
                 result = []
@@ -750,22 +750,22 @@ def roll_dice(roll):
 
                     elif individual[4] == 's':
                         result.append(j - int(individual[5]))
-                        
+
                     elif individual[4] == 'm':
                         result.append(j * int(individual[5]))
-                        
+
                     else:
                         raise ValueError
                 results.append(sum(result))
                 roll = ','.join([str(x) + individual[4] + individual[5] for x in group_result]) #Create string with the modifier on each roll
                 string.append('[%s]' % roll)
-                
+
             elif normal is not None:
                 group_result = roll_group(group)
                 results.append(sum(group_result))
                 roll = ','.join([str(i) for i in group_result])
                 string.append('[%s]' % roll)
-                
+
             elif literal is not None:
                 results.append(int(literal[1]))  # Just append the integer value
                 string.append(literal[1])
@@ -777,9 +777,9 @@ def roll_dice(roll):
 
         except Exception:
             raise DiceGroupException('"%s" is not a valid dicegroup.' % group)
-        
+
     parser = SimpleEval() #The parser object parses the dice rolls and functions
-    try:        
+    try:
         final_result = parser.eval(''.join([str(x) for x in results])) #Call the parser to parse into one value
         if final_result is True:
             final_result = 1
@@ -789,7 +789,7 @@ def roll_dice(roll):
             final_result = final_result
     except Exception:
         raise DiceOperatorException('Error parsing operators and or functions')
-    
+
     #Create explanation string and remove extraneous spaces
     explanation = ''.join(string)
     explanation = zero_width_split(r'((?<=[\/%^+*\/])(?=[^*\/]))|((?<=[^*\/])(?=[\/%^+*]))|(?<=[^\(\)])(?=-)|(?<=-)(?=[^\d\(\)a-z])|(?<=\d-)(?=.)|(?<=,)(?![^[]*])', explanation) #Split on ops to properly format the explanation
