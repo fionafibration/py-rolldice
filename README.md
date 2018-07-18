@@ -23,22 +23,26 @@ Dice syntax is based on [CritDice](https://www.critdice.com/roll-advanced-dice/)
 1d4 * 3: Roll a 4 sided die once and multiply by 3
 d4 * 3: Same as above, leaving out the number of dice will default to 1
 5d6 / 3: Roll 5d6 and divide by 3, rounding down
+2d10 ** 1d20: Roll 2d10 and exponentiate to the power of 1d20. Completely useless. Please never do this.
+1d6 ** 1d6 ** 1d6 ** 1d6: OH GOD PLEASE NO
 ```
-
-You get the idea. Spaces are optional and can actually be inserted anywhere in the rolls. `1 5 d 2 0 + 3 5` actually works. Operators follow PEMDAS and parentheses are supported. Exponents are not supported.
-EG: 
+You get the idea. Spaces are optional and can actually be inserted anywhere in the rolls. `1 5 d 2 0 + 3 5` actually works. Operators follow PEMDAS. e.g: 
 ```
-roll_dice('2*3+5') #Will return 11, following PEMDAS
-roll_dice('2*(3+5)') #Will return 16, using parentheses precedence
+roll_dice('2*3+5') # Will return 11, following PEMDAS
+roll_dice('2*(3+5)') # Will return 16, using parentheses precedence
 ```
-Additionally, the module supports the absolute value function:
+Dice rolling also supports three functions, for no reason other than because I can.
 ```
-roll_dice('abs(2d6-7)')
-roll_dice('5-abs(2d20-20)')
+abs(2d6-7) # Absolute value of 2d6-7
+gcd(2d6, 2d6) # GCD of 2d6 and 2d6
+lcm(7, 4d20) # LCM of 7 and 4d20
 ```
-Other functions may be added.  
+I have no idea what you'd use these for, but here you go, have them.
+Other functions may be added.
+##### Note about exponentiation:
+I have made a check to attempt to protect your soft, fragile CPUs from the menace of the pow() function, but you still have to be careful.
+Exponentiation is right-associative, because math.
 #### Advanced syntax:
-
 ##### Keep Highest (K):
 Used to (K)eep the highest roll. Can be followed by a number to keep that number of dice or by nothing to indicate keeping only one.
 ```
@@ -140,6 +144,7 @@ That's all there is to it!
 - [X] DiceBag object for repeating dice rolls and storing as an object.
 - [X] Rerolling once or arbitrary number of times on a given condition
 - [X] Parse PEMDAS properly
-- [X] Safe mathematical parser  
+- [X] Safe mathematical parser
+- [X] Even better AST parser supporting all the goodies
 ## Suggestions
 If you have any other ideas for features, just make a suggestion and I'll see what I can do!
