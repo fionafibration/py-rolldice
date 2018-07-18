@@ -14,13 +14,14 @@ import random
 import ast
 import regex
 import operator
+import math
 
 class DiceGroupException(Exception):  # Exception for when dice group is malformed, ie '12d6>7!'
     def __init__(self, *args, **kwargs):
         Exception.__init__(self, *args, **kwargs)
 
 
-class DiceOperatorException(Exception):  # Exception for when incorrect or malformed operators are used between dice, ie '3d4 + -200'
+class DiceOperatorException(Exception):  # Exception for when incorrect or malformed operators are used between dice
     def __init__(self, *args, **kwargs):
         Exception.__init__(self, *args, **kwargs)
 
@@ -52,20 +53,22 @@ def lcm(a, b):
 MAX_POWER = 4000000
 
 def safe_power(a, b):
+    """
+    Same power of a ^ b
+    :param a: Number a
+    :param b: Number b
+    :return: a ^ b
+    """
     if abs(a) > MAX_POWER or abs(b) > MAX_POWER:
         raise ValueError('Number too high!')
     return a ** b
 
 
-DEFAULT_FUNCTIONS = {"abs": abs, 'gcd': gcd, 'lcm': lcm}
+DEFAULT_FUNCTIONS = {"abs": abs, 'gcd': gcd, 'lcm': lcm, 'ceil': math.ceil, 'floor': math.floor}
 
 DEFAULT_OPS = {ast.Add: operator.add, ast.Sub: operator.sub, ast.Mult: operator.mul,
-               ast.Div: operator.floordiv,
+               ast.Div: operator.truediv, ast.FloorDiv: operator.floordiv,
                ast.Pow: safe_power, ast.Mod: operator.mod,
-               ast.Eq: operator.eq, ast.NotEq: operator.ne,
-               ast.Gt: operator.gt, ast.Lt: operator.lt,
-               ast.GtE: operator.ge, ast.LtE: operator.le,
-               ast.Not: operator.not_,
                ast.USub: operator.neg, ast.UAdd: operator.pos
                }
 
@@ -86,7 +89,6 @@ class SimpleEval(object):
             ast.Name: self._eval_name,
             ast.UnaryOp: self._eval_unaryop,
             ast.BinOp: self._eval_binop,
-            ast.Compare: self._eval_compare,
             ast.Call: self._eval_call,
         }
 
@@ -114,7 +116,7 @@ class SimpleEval(object):
 
     @staticmethod
     def _eval_num(node):
-        return int(node.n)
+        return node.n
 
     def _eval_unaryop(self, node):
         return self.operators[type(node.op)](self._eval(node.operand))
@@ -294,7 +296,8 @@ def roll_dice(roll):
     :return: Result of roll, and an explanation string
     """
     roll = ''.join(roll.split())
-    roll = zero_width_split(r'((?<=[\(\)=<>,%^/+*-])(?=.))|((?<=.)(?=[\(\)=<>,%^/+*-]))', roll)  # Split the string on the boundary between operators and other chars
+    regex.sub(r'(?<=d)(%)', '100', roll)
+    roll = zero_width_split(r'((?<=[\(\),%^\/+*-])(?=.))|((?<=.)(?=[\(\),%^\/+*-]))', roll)  # Split the string on the boundary between operators and other chars
 
     string = []
 
@@ -338,7 +341,9 @@ def roll_dice(roll):
 
             normal = regex.match(r'^((\d*)d(\d+))$', group, regex.IGNORECASE)  # Regex for normal dice rolls
 
-            literal = regex.match(r'^(\d+)(?!\.)|(\.\d+)|(\d+.\d+)$', group, regex.IGNORECASE)  # Regex for number literals. Note that preceding negative signs are not used, simply subtract
+            literal = regex.match(r'^(\d+)(?!\.)$', group, regex.IGNORECASE)  # Regex for number literals.
+
+            float = regex.match(r'^(\.\d+)|(\d+.\d+)$', group, regex.IGNORECASE) # Regex for floats
 
             if explode is not None:  # Handle exploding dice without a comparison modifier.
                 type_of_dice = int(explode[3])
@@ -763,9 +768,10 @@ def roll_dice(roll):
                 
             elif literal is not None:
                 results.append(int(literal[1]))  # Just append the integer value
-                roll = literal[1]
-                string.append(roll)
-
+                string.append(literal[1])
+            elif float is not None:
+                results.append(float(group))
+                string.append(group)
             else:
                 raise Exception
 
@@ -780,13 +786,13 @@ def roll_dice(roll):
         elif final_result is False:
             final_result = 0
         else:
-            final_result = int(final_result)
+            final_result = final_result
     except Exception:
         raise DiceOperatorException('Error parsing operators and or functions')
     
     #Create explanation string and remove extraneous spaces
     explanation = ''.join(string)
-    explanation = zero_width_split(r'((?<=[\/%^<>=+*\/])(?=[^*<>=\/]))|((?<=[^*<>=])(?=[\/%^<>=+*]))|(?<=[^\(\)])(?=-)|(?<=-)(?=[^\d\(\)a-z])|(?<=\d-)(?=.)|(?<=,)(?![^[]*])', explanation) #Split on ops to properly format the explanation
+    explanation = zero_width_split(r'((?<=[\/%^+*\/])(?=[^*\/]))|((?<=[^*\/])(?=[\/%^+*]))|(?<=[^\(\)])(?=-)|(?<=-)(?=[^\d\(\)a-z])|(?<=\d-)(?=.)|(?<=,)(?![^[]*])', explanation) #Split on ops to properly format the explanation
     explanation = ' '.join(explanation)
     explanation = explanation.strip()
     explanation = regex.sub(r'[ \t]{2,}', ' ', explanation)

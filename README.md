@@ -22,7 +22,8 @@ Dice syntax is based on [CritDice](https://www.critdice.com/roll-advanced-dice/)
 2d20 - 3: Roll a 20 sided die 2 times and subtract 3
 1d4 * 3: Roll a 4 sided die once and multiply by 3
 d4 * 3: Same as above, leaving out the number of dice will default to 1
-5d6 / 3: Roll 5d6 and divide by 3, rounding down
+5d6 / 3: Roll 5d6 and divide by 3
+5d6 // 3: Same as above but floor division
 2d10 ** 1d20: Roll 2d10 and exponentiate to the power of 1d20. Completely useless. Please never do this.
 1d6 ** 1d6 ** 1d6 ** 1d6: OH GOD PLEASE NO
 ```
@@ -31,13 +32,14 @@ You get the idea. Spaces are optional and can actually be inserted anywhere in t
 roll_dice('2*3+5') # Will return 11, following PEMDAS
 roll_dice('2*(3+5)') # Will return 16, using parentheses precedence
 ```
-Dice rolling also supports three functions, for no reason other than because I can.
+Dice rolling also supports some functions, for no reason other than because I can.
 ```
-abs(2d6-7) # Absolute value of 2d6-7
-gcd(2d6, 2d6) # GCD of 2d6 and 2d6
-lcm(7, 4d20) # LCM of 7 and 4d20
+abs(2d6-7): Absolute value of 2d6-7
+gcd(2d6, 2d6): GCD of 2d6 and 2d6
+lcm(7, 4d20): LCM of 7 and 4d20
+floor(2d6 / 2): Floor of 2d6 / 2
+ceil(2d6 / 2) Ceiling of 2d6 / 2
 ```
-I have no idea what you'd use these for, but here you go, have them.
 Other functions may be added.
 ##### Note about exponentiation:
 I have made a check to attempt to protect your soft, fragile CPUs from the menace of the pow() function, but you still have to be careful.
