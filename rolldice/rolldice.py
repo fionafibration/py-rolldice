@@ -44,9 +44,9 @@ class Parser:
         
         :return: Value of the expression
         """
-        value = self.parseExpression()
+        value = self.parse_expression()
         
-        if self.hasNext():
+        if self.has_next():
             raise Exception(
                 "Unexpected character found: '" + self.peek() + "' at index " + str(self.index)
             )
@@ -60,7 +60,7 @@ class Parser:
         """
         return self.string[self.index:self.index + 1]
 
-    def hasNext(self):
+    def has_next(self):
         """
         Checks whether there are more chars in the expression
         
@@ -68,56 +68,88 @@ class Parser:
         """
         return self.index < len(self.string)
 
+    def is_next(self, value):
+        """
+        Checks whether the value is next in the expression
+
+        :param value: String value to check
+        :return: None
+        """
+        return self.string[self.index:self.index + len(value)] == value
+
+    def pop_if_next(self, value):
+        """
+        Pops a value if it is next in the expression
+
+        :param value: Value to pop
+        :return: Boolean of whether the value was next
+        """
+        if self.is_next(value):
+            self.index += len(value)
+            return True
+        return False
+
+    def pop_expected(self, value):
+        """
+        Pops value if next, otherwise raises ValueError
+
+        :param value: Value to check
+        :raises: ValueError if value was not there
+        :return: None
+        """
+        if not self.pop_if_next(value):
+            raise ValueError('Expected \'%s\' at index %s' % (value, self.index))
+
     # This is reversed PEMDAS
     # Starts at addition, addition calls multiplication, etc.
-    def parseExpression(self):
+    def parse_expression(self):
         """
         Parse an expression by calling parseAddition()
         
         :return: The value of the expression
         """
-        return self.parseAddition()
+        return self.parse_addition()
 
-    def parseAddition(self):
+    def parse_addition(self):
         """
         Parse addition and subtraction and call parseMultiplication()
         
         :return: The value of the expression
         """
-        values = [self.parseMultiplication()]
+        values = [self.parse_multiplication()]
         
         while True:
             char = self.peek()
             
             if char == '+':
                 self.index += 1
-                values.append(self.parseMultiplication())
+                values.append(self.parse_multiplication())
             elif char == '-':
                 self.index += 1
-                values.append(-1 * self.parseMultiplication())
+                values.append(-1 * self.parse_multiplication())
             else:
                 break
         
         return sum(values)
 
-    def parseMultiplication(self):
+    def parse_multiplication(self):
         """
         Parse multiplication and division (floor) and call parseParenthesis
         
         :return: The value of the expression
         """
-        values = [self.parseParenthesis()]
+        values = [self.parse_parenthesis()]
             
         while True:
             char = self.peek()
                 
             if char == '*':
                 self.index += 1
-                values.append(self.parseParenthesis())
+                values.append(self.parse_parenthesis())
             elif char == '/':
                 div_index = self.index
                 self.index += 1
-                denominator = self.parseParenthesis()
+                denominator = self.parse_parenthesis()
                      
                 if denominator == 0:
                     raise Exception(
@@ -133,7 +165,7 @@ class Parser:
             value *= factor
         return value
 
-    def parseParenthesis(self):
+    def parse_parenthesis(self):
         """
         Parse expressions in parenthesis or call parseNegative()
         
@@ -143,16 +175,25 @@ class Parser:
         
         if char == '(':
             self.index += 1
-            value = self.parseExpression()
+            value = self.parse_expression()
             
             if self.peek() != ')':
                 raise Exception("No closing parenthesis found at character " + str(self.index))
             self.index += 1
             return value
         else:
-            return self.parseNegative()
+            return self.parse_negative()
 
-    def parseNegative(self):
+    def parse_arguments(self):
+        args = []
+        self.pop_expected('(')
+        while not self.pop_if_next(')'):
+            if len(args) > 0:
+                self.pop_expected(',')
+            args.append(self.parse_expression())
+        return args
+
+    def parse_negative(self):
         """
         Parse integers, negative integers, or negative values in parenthesis
         
@@ -162,11 +203,11 @@ class Parser:
         
         if char == '-':
             self.index += 1
-            return -1 * self.parseParenthesis()
+            return -1 * self.parse_parenthesis()
         else:
-            return self.parseValue()
+            return self.parse_value()
 
-    def parseValue(self):
+    def parse_value(self):
         """
         Parse a number literal or a 'variable', which for our purposes is only a function
         
@@ -175,18 +216,18 @@ class Parser:
         char = self.peek()
         
         if char in '0123456789':
-            return self.parseNumber()
+            return self.parse_number()
         else:
-            return self.parseVariable()
+            return self.parse_variable()
  
-    def parseVariable(self):
+    def parse_variable(self):
         """
         Parse a function literal
         
         :return: The result of the function call
         """
         var = []
-        while self.hasNext():
+        while self.has_next():
             char = self.peek()
             
             if char.lower() in 'abcdefghijklmnopqrstuvwxyz':
@@ -198,12 +239,12 @@ class Parser:
         
         function = _FUNCTIONS.get(var.lower())
         if function != None:
-            arg = self.parseParenthesis()
-            return int(function(arg))
+            args = self.parse_arguments()
+            return int(function(*args))
             
         raise Exception("Unrecognized variable: '" + var + "'")
 
-    def parseNumber(self):
+    def parse_number(self):
         """
         Parse a number literal
         
@@ -212,7 +253,7 @@ class Parser:
         strValue = ''
         char = ''
 
-        while self.hasNext():
+        while self.has_next():
             char = self.peek()
             
             if char in '0123456789':
@@ -236,6 +277,7 @@ class DiceBag:
         Initializes dicebag.
 
         :param roll: Roll to initialize with or if no roll is supplied, '0'
+        :return: None
         """
         self._roll = None
         self._last_roll = None
@@ -277,6 +319,7 @@ class DiceBag:
         Setter for roll, verifies the roll is valid
         
         :param value: Roll
+        :return: None
         """
         if type(value) != str:  # Make sure dice roll is a str
             raise TypeError('Dice roll must be a string in dice notation')
@@ -322,10 +365,10 @@ def zero_width_split(pattern, string):
 
 def roll_group(group):
     """
-    Rolls a group of dice in 2d6, 3d10, d12, etc. format and returns an array of results
+    Rolls a group of dice in 2d6, 3d10, d12, etc. format
 
-    :param group:
-    :return:
+    :param group: String of dice group
+    :return: Array of results
     """
     group = regex.match(r'^(\d*)d(\d+)$', group, regex.IGNORECASE)
     num_of_dice = int(group[1]) if group[1] != '' else 1
