@@ -5,14 +5,15 @@
 py-dice-roll
 Created by Finianb1
 https://github.com/ThePlasmaRailgun/py-dice-roll/
-Math parser thanks to louisfisch on GitHub
-https://github.com/louisfisch/mathematical-expressions-parser
+Math parser thanks to DanTheDeckie on GitHub
+
+https://github.com/danthedeckie/simpleeval
 """
 
-import math
 import random
+import ast
 import regex
-
+import operator
 
 class DiceGroupException(Exception):  # Exception for when dice group is malformed, ie '12d6>7!'
     def __init__(self, *args, **kwargs):
@@ -23,252 +24,136 @@ class DiceOperatorException(Exception):  # Exception for when incorrect or malfo
     def __init__(self, *args, **kwargs):
         Exception.__init__(self, *args, **kwargs)
 
-_FUNCTIONS = { # Extensible to allow calling more functions by adding a string name
-    # And the actual function object
-    'abs': abs,
-}
 
-class Parser:
-    def __init__(self, string): 
-        """
-        Initialize the parser with an expression
-        
-        :param string: String of expression to parse
-        """
-        self.string = string
-        self.index = 0 # Initialize by starting at index 0
+def gcd(a, b):
+    """
+    Computes GCD using Euclid's algorithm
 
-    def __call__(self):
-        """
-        Parse the expression and return the value
-        
-        :return: Value of the expression
-        """
-        value = self.parse_expression()
-        
-        if self.has_next():
-            raise Exception(
-                "Unexpected character found: '" + self.peek() + "' at index " + str(self.index)
-            )
-        return int(value)
+    :param a: Number A
+    :param b: Number B
+    :return: gcd(a, b)
+    """
+    while b > 0:
+        a, b = b, a % b
+    return a
 
-    def peek(self): # Look at the next char in the string
-        """
-        Look at the next character in the string
-        
-        :return: The next char in the string
-        """
-        return self.string[self.index:self.index + 1]
 
-    def has_next(self):
-        """
-        Checks whether there are more chars in the expression
-        
-        :return: Boolean of whether there are more chars in the expression
-        """
-        return self.index < len(self.string)
+def lcm(a, b):
+    """
+    Computes LCM using GCD
 
-    def is_next(self, value):
-        """
-        Checks whether the value is next in the expression
+    :param a: Number A
+    :param b: Number B
+    :return: lcm(a, b)
+    """
+    return a * b / gcd(a, b)
 
-        :param value: String value to check
-        :return: None
-        """
-        return self.string[self.index:self.index + len(value)] == value
 
-    def pop_if_next(self, value):
-        """
-        Pops a value if it is next in the expression
+MAX_POWER = 4000000
 
-        :param value: Value to pop
-        :return: Boolean of whether the value was next
-        """
-        if self.is_next(value):
-            self.index += len(value)
-            return True
-        return False
+def safe_power(a, b):
+    if abs(a) > MAX_POWER or abs(b) > MAX_POWER:
+        raise ValueError('Number too high!')
+    return a ** b
 
-    def pop_expected(self, value):
-        """
-        Pops value if next, otherwise raises ValueError
 
-        :param value: Value to check
-        :raises: ValueError if value was not there
-        :return: None
-        """
-        if not self.pop_if_next(value):
-            raise ValueError('Expected \'%s\' at index %s' % (value, self.index))
+DEFAULT_FUNCTIONS = {"abs": abs, 'gcd': gcd, 'lcm': lcm}
 
-    # This is reversed PEMDAS
-    # Starts at addition, addition calls multiplication, etc.
-    def parse_expression(self):
-        """
-        Parse an expression by calling parseAddition()
-        
-        :return: The value of the expression
-        """
-        return self.parse_addition()
+DEFAULT_OPS = {ast.Add: operator.add, ast.Sub: operator.sub, ast.Mult: operator.mul,
+               ast.Div: operator.floordiv,
+               ast.Pow: safe_power, ast.Mod: operator.mod,
+               ast.Eq: operator.eq, ast.NotEq: operator.ne,
+               ast.Gt: operator.gt, ast.Lt: operator.lt,
+               ast.GtE: operator.ge, ast.LtE: operator.le,
+               ast.Not: operator.not_,
+               ast.USub: operator.neg, ast.UAdd: operator.pos
+               }
 
-    def parse_addition(self):
+class SimpleEval(object):
+    expr = ""
+
+    def __init__(self):
         """
-        Parse addition and subtraction and call parseMultiplication()
-        
-        :return: The value of the expression
-        """
-        values = [self.parse_multiplication()]
-        
-        while True:
-            char = self.peek()
-            
-            if char == '+':
-                self.index += 1
-                values.append(self.parse_multiplication())
-            elif char == '-':
-                self.index += 1
-                values.append(-1 * self.parse_multiplication())
+            Create the evaluator instance.  Set up valid operators (+,-, etc)
+            functions (add, random, get_val, whatever) and names. """
+
+        self.operators = DEFAULT_OPS
+
+        self.functions = DEFAULT_FUNCTIONS
+
+        self.nodes = {
+            ast.Num: self._eval_num,
+            ast.Name: self._eval_name,
+            ast.UnaryOp: self._eval_unaryop,
+            ast.BinOp: self._eval_binop,
+            ast.Compare: self._eval_compare,
+            ast.Call: self._eval_call,
+        }
+
+    def eval(self, expr):
+        """ evaluate an expression, using the operators, functions and
+            names previously set up. """
+
+        # set a copy of the expression aside, so we can give nice errors...
+
+        self.expr = expr
+
+        # and evaluate:
+        return self._eval(ast.parse(expr.strip()).body[0].value)
+
+    def _eval(self, node):
+        """ The internal evaluator used on each node in the parsed tree. """
+
+        try:
+            handler = self.nodes[type(node)]
+        except KeyError:
+            raise ValueError("Sorry, {0} is not available in this "
+                                      "evaluator".format(type(node).__name__))
+
+        return handler(node)
+
+    @staticmethod
+    def _eval_num(node):
+        return int(node.n)
+
+    def _eval_unaryop(self, node):
+        return self.operators[type(node.op)](self._eval(node.operand))
+
+    def _eval_binop(self, node):
+        return self.operators[type(node.op)](self._eval(node.left),
+                                             self._eval(node.right))
+
+    def _eval_compare(self, node):
+        left = self._eval(node.left)
+        for operation, comp in zip(node.ops, node.comparators):
+            right = self._eval(comp)
+            if self.operators[type(operation)](left, right):
+                left = right  # Hi Dr. Seuss...
             else:
-                break
-        
-        return sum(values)
+                return False
+        return True
 
-    def parse_multiplication(self):
-        """
-        Parse multiplication and division (floor) and call parseParenthesis
-        
-        :return: The value of the expression
-        """
-        values = [self.parse_parenthesis()]
-            
-        while True:
-            char = self.peek()
-                
-            if char == '*':
-                self.index += 1
-                values.append(self.parse_parenthesis())
-            elif char == '/':
-                div_index = self.index
-                self.index += 1
-                denominator = self.parse_parenthesis()
-                     
-                if denominator == 0:
-                    raise Exception(
-                        "Division by 0 (occured at index " + str(div_index) + ")"
-                    )
-                values.append(1.0 / denominator) # Division
-            else:
-                break
-                     
-        value = 1 # Not a float so division doesn't ever return a float
-        
-        for factor in values: # Multiply up all the factors
-            value *= factor
-        return value
 
-    def parse_parenthesis(self):
-        """
-        Parse expressions in parenthesis or call parseNegative()
-        
-        :return: The value of the expression
-        """
-        char = self.peek()
-        
-        if char == '(':
-            self.index += 1
-            value = self.parse_expression()
-            
-            if self.peek() != ')':
-                raise Exception("No closing parenthesis found at character " + str(self.index))
-            self.index += 1
-            return value
+    def _eval_call(self, node):
+        if isinstance(node.func, ast.Attribute):
+            func = self._eval(node.func)
         else:
-            return self.parse_negative()
+            try:
+                func = self.functions[node.func.id]
+            except KeyError:
+                raise NameError(node.func.id, self.expr)
 
-    def parse_arguments(self):
-        args = []
-        self.pop_expected('(')
-        while not self.pop_if_next(')'):
-            if len(args) > 0:
-                self.pop_expected(',')
-            args.append(self.parse_expression())
-        return args
+        return func(
+            *(self._eval(a) for a in node.args),
+            **dict(self._eval(k) for k in node.keywords)
+        )
 
-    def parse_negative(self):
-        """
-        Parse integers, negative integers, or negative values in parenthesis
-        
-        :return: The value of the number
-        """
-        char = self.peek()
-        
-        if char == '-':
-            self.index += 1
-            return -1 * self.parse_parenthesis()
-        else:
-            return self.parse_value()
 
-    def parse_value(self):
-        """
-        Parse a number literal or a 'variable', which for our purposes is only a function
-        
-        :return: The value of the literal or function call
-        """
-        char = self.peek()
-        
-        if char in '0123456789':
-            return self.parse_number()
-        else:
-            return self.parse_variable()
- 
-    def parse_variable(self):
-        """
-        Parse a function literal
-        
-        :return: The result of the function call
-        """
-        var = []
-        while self.has_next():
-            char = self.peek()
-            
-            if char.lower() in 'abcdefghijklmnopqrstuvwxyz':
-                var.append(char)
-                self.index += 1
-            else:
-                break
-        var = ''.join(var)
-        
-        function = _FUNCTIONS.get(var.lower())
-        if function != None:
-            args = self.parse_arguments()
-            return int(function(*args))
-            
-        raise Exception("Unrecognized variable: '" + var + "'")
+    def _eval_name(self, node):
+        if node.id in self.functions:
+            return self.functions[node.id]
 
-    def parse_number(self):
-        """
-        Parse a number literal
-        
-        :return: The number literal's value
-        """
-        strValue = ''
-        char = ''
-
-        while self.has_next():
-            char = self.peek()
-            
-            if char in '0123456789':
-                strValue += char
-            else:
-                break
-            self.index += 1
-
-        if len(strValue) == 0:
-            if char == '':
-                raise Exception("Unexpected end found")
-            else:
-                raise Exception("Expecting to find a number at " + str(self.index) + " but instad found '" + char + "'")
-            
-        return int(strValue)
+        raise NameError(node.id, self.expr)
 
 
 class DiceBag:
@@ -409,22 +294,19 @@ def roll_dice(roll):
     :return: Result of roll, and an explanation string
     """
     roll = ''.join(roll.split())
-    roll = roll.replace('%', '100')
-    roll = zero_width_split(r'((?<=[\(\)/+*-])(?=.))|((?<=.)(?=[\(\)/+*-]))', roll)  # Split the string on the boundary between operators and other chars
+    roll = zero_width_split(r'((?<=[\(\)=<>,%^/+*-])(?=.))|((?<=.)(?=[\(\)=<>,%^/+*-]))', roll)  # Split the string on the boundary between operators and other chars
 
     string = []
 
     results = []
 
     for group in roll:
-        if group in '()+-*/': #Append operators without modification
+        if group in '()/=<>,%^+*-' or group in DEFAULT_FUNCTIONS: #Append operators without modification
             results.append(group)
             string.append(group)
             continue
-        if group in _FUNCTIONS.keys():
-            results.append(group)
-            string.append(group)
-            continue
+        else:
+            match = regex.match(r'\d+\.\d+', group, regex.IGNORECASE)
         try:
             explode = regex.match(r'^((\d*)d(\d+))!$', group, regex.IGNORECASE)  # Regex for exploding dice, ie. 2d10!, 4d100!, d12!, etc.
 
@@ -456,7 +338,7 @@ def roll_dice(roll):
 
             normal = regex.match(r'^((\d*)d(\d+))$', group, regex.IGNORECASE)  # Regex for normal dice rolls
 
-            literal = regex.match(r'^(\d+)$', group, regex.IGNORECASE)  # Regex for number literals. Note that preceding negative signs are not used, simply subtract
+            literal = regex.match(r'^(\d+)(?!\.)|(\.\d+)|(\d+.\d+)$', group, regex.IGNORECASE)  # Regex for number literals. Note that preceding negative signs are not used, simply subtract
 
             if explode is not None:  # Handle exploding dice without a comparison modifier.
                 type_of_dice = int(explode[3])
@@ -890,18 +772,23 @@ def roll_dice(roll):
         except Exception:
             raise DiceGroupException('"%s" is not a valid dicegroup.' % group)
         
-    parser = Parser(''.join([str(x) for x in results])) #The parser object parses the dice rolls and functions
+    parser = SimpleEval() #The parser object parses the dice rolls and functions
     try:        
-        final_result = parser() #Call the parser to parse into one value
+        final_result = parser.eval(''.join([str(x) for x in results])) #Call the parser to parse into one value
+        if final_result is True:
+            final_result = 1
+        elif final_result is False:
+            final_result = 0
+        else:
+            final_result = int(final_result)
     except Exception:
         raise DiceOperatorException('Error parsing operators and or functions')
     
     #Create explanation string and remove extraneous spaces
     explanation = ''.join(string)
-    explanation = zero_width_split(r'((?<=[/+*-])(?=.))|((?<=.)(?=[/+*-]))', explanation) #Split on operators to add spaces
+    explanation = zero_width_split(r'((?<=[\/%^<>=+*\/])(?=[^*<>=\/]))|((?<=[^*<>=])(?=[\/%^<>=+*]))|(?<=[^\(\)])(?=-)|(?<=-)(?=[^\d\(\)a-z])|(?<=\d-)(?=.)|(?<=,)(?![^[]*])', explanation) #Split on ops to properly format the explanation
     explanation = ' '.join(explanation)
     explanation = explanation.strip()
     explanation = regex.sub(r'[ \t]{2,}', ' ', explanation)
 
     return final_result, explanation
-
