@@ -297,6 +297,7 @@ def roll_dice(roll):
     """
     roll = ''.join(roll.split())
     roll = regex.sub(r'(?<=d)%', '100', roll, regex.IGNORECASE)
+    roll = roll.replace('^', '**')
     roll = zero_width_split(r'((?<=[\(\),%^\/+*-])(?=.))|((?<=.)(?=[\(\),%^\/+*-]))', roll)  # Split the string on the boundary between operators and other chars
 
     string = []
@@ -792,7 +793,7 @@ def roll_dice(roll):
 
     #Create explanation string and remove extraneous spaces
     explanation = ''.join(string)
-    explanation = zero_width_split(r'((?<=[\/%^+*\/])(?=[^*\/]))|((?<=[^*\/])(?=[\/%^+*]))|(?<=[^\(\)])(?=-)|(?<=-)(?=[^\d\(\)a-z])|(?<=\d-)(?=.)|(?<=,)(?![^[]*])', explanation) #Split on ops to properly format the explanation
+    explanation = zero_width_split(r'((?<=[\/%^+\/])(?![\/,]))|((?<![\/,])(?=[\/%^+]))|((?<=[^\(\)])(?=-))|(?<=-)(?=[^\d\(\)a-z\[\]])|(?<=\d-)(?=.)|(?<=,)(?![^[]*])|(?<=([^,]\*))(?!\*)|(?<![,\*])(?=\*)', explanation) #Split on ops to properly format the explanation
     explanation = ' '.join(explanation)
     explanation = explanation.strip()
     explanation = regex.sub(r'[ \t]{2,}', ' ', explanation)
