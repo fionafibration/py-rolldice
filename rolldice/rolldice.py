@@ -64,7 +64,37 @@ def safe_power(a, b):
     return a ** b
 
 
-DEFAULT_FUNCTIONS = {"abs": abs, 'gcd': gcd, 'lcm': lcm, 'ceil': math.ceil, 'floor': math.floor}
+def rabin_miller(num):
+    """
+    Performs a rabin-miller primality test
+
+    :param num: Number to test
+    :return: Bool of whether num is prime
+    """
+
+    # From Al Swiegart
+
+    s = num - 1
+    t = 0
+    while s % 2 == 0:
+        s = s // 2
+        t += 1
+
+    for trials in range(5):
+        a = random.randrange(2, num - 1)
+        v = pow(a, s, num)
+        if v != 1:
+            i = 0
+            while v != (num - 1):
+                if i == t - 1:
+                    return False
+                else:
+                    i = i + 1
+                    v = (v ** 2) % num
+    return True
+
+
+DEFAULT_FUNCTIONS = {"abs": abs, 'gcd': gcd, 'lcm': lcm, 'ceil': math.ceil, 'floor': math.floor, 'prime': rabin_miller}
 
 DEFAULT_OPS = {ast.Add: operator.add, ast.Sub: operator.sub, ast.Mult: operator.mul,
                ast.Div: operator.truediv, ast.FloorDiv: operator.floordiv,
@@ -72,30 +102,50 @@ DEFAULT_OPS = {ast.Add: operator.add, ast.Sub: operator.sub, ast.Mult: operator.
                ast.USub: operator.neg, ast.UAdd: operator.pos
                }
 
+DEFAULT_OPS_NO_FLOAT = {ast.Add: operator.add, ast.Sub: operator.sub, ast.Mult: operator.mul,
+                        ast.Div: operator.floordiv,
+                        ast.Pow: safe_power, ast.Mod: operator.mod,
+                        ast.USub: operator.neg, ast.UAdd: operator.pos
+                        }
+
+
 class SimpleEval(object):
     expr = ""
 
-    def __init__(self):
+    def __init__(self, *, functions=True, floats=True):
         """
-            Create the evaluator instance.  Set up valid operators (+,-, etc)
-            functions (add, random, get_val, whatever) and names. """
+        Initializes a SimpleEval object
 
-        self.operators = DEFAULT_OPS
+        :param functions: Allow for parsing of function calls
+        :param floats: Allow for parsing of floats, when set to division defaults to floordiv
+
+        Parameters are currently not safe to change once initialized. Doing this will have no effect.
+        """
+        self.floats = floats
+
+        if self.floats:
+            self.operators = DEFAULT_OPS
+        else:
+            self.operators = DEFAULT_OPS_NO_FLOAT
 
         self.functions = DEFAULT_FUNCTIONS
 
         self.nodes = {
             ast.Num: self._eval_num,
-            ast.Name: self._eval_name,
             ast.UnaryOp: self._eval_unaryop,
             ast.BinOp: self._eval_binop,
-            ast.Call: self._eval_call,
         }
 
-    def eval(self, expr):
-        """ evaluate an expression, using the operators, functions and
-            names previously set up. """
+        if functions:
+            self.nodes[ast.Call] = self._eval_call
 
+    def eval(self, expr):
+        """
+        Evaluates an expression
+
+        :param expr: Expression to evaluate
+        :return: Result of expression
+        """
         # set a copy of the expression aside, so we can give nice errors...
 
         self.expr = expr
@@ -104,84 +154,106 @@ class SimpleEval(object):
         return self._eval(ast.parse(expr.strip()).body[0].value)
 
     def _eval(self, node):
-        """ The internal evaluator used on each node in the parsed tree. """
+        """
+        Evaluate a node
 
+        :param node: Node to eval
+        :return: Result of node
+        """
         try:
             handler = self.nodes[type(node)]
         except KeyError:
-            raise ValueError("Sorry, {0} is not available in this "
-                                      "evaluator".format(type(node).__name__))
+            raise ValueError("Sorry, {0} is not available in this evaluator".format(type(node).__name__))
 
         return handler(node)
 
-    @staticmethod
-    def _eval_num(node):
-        return node.n
+    def _eval_num(self, node):
+        """
+        Evaluate a numerical node
+
+        :param node: Node to eval
+        :return: Result of node
+        """
+        if self.floats:
+            return node.n
+        else:
+            return int(node.n)
 
     def _eval_unaryop(self, node):
+        """
+        Evaluate a unary operator node (ie. -2, +3)
+        Currently just supports positive and negative
+
+        :param node: Node to eval
+        :return: Result of node
+        """
         return self.operators[type(node.op)](self._eval(node.operand))
 
     def _eval_binop(self, node):
+        """
+        Evaluate a binary operator node (ie. 2+3, 5*6, 3 ** 4)
+
+        :param node: Node to eval
+        :return: Result of node
+        """
         return self.operators[type(node.op)](self._eval(node.left),
                                              self._eval(node.right))
 
-    def _eval_compare(self, node):
-        left = self._eval(node.left)
-        for operation, comp in zip(node.ops, node.comparators):
-            right = self._eval(comp)
-            if self.operators[type(operation)](left, right):
-                left = right  # Hi Dr. Seuss...
-            else:
-                return False
-        return True
-
-
     def _eval_call(self, node):
-        if isinstance(node.func, ast.Attribute):
-            func = self._eval(node.func)
-        else:
-            try:
-                func = self.functions[node.func.id]
-            except KeyError:
-                raise NameError(node.func.id, self.expr)
+        """
+        Evaluate a function call
 
-        return func(
+        :param node: Node to eval
+        :return: Result of node
+        """
+        try:
+            func = self.functions[node.func.id]
+        except KeyError:
+            raise NameError(node.func.id)
+
+        value = func(
             *(self._eval(a) for a in node.args),
             **dict(self._eval(k) for k in node.keywords)
         )
 
-
-    def _eval_name(self, node):
-        if node.id in self.functions:
-            return self.functions[node.id]
-
-        raise NameError(node.id, self.expr)
+        if value is True:
+            return 1
+        elif value is False:
+            return 0
+        else:
+            return value
 
 
 class DiceBag:
-    def __init__(self, roll='0'):  # Initialize dicebag with a default roll of a 0 literal
+    def __init__(self, roll='0', *, functions=True, floats=True):  # Initialize dicebag with a default roll of a 0 literal
         """
         Initializes dicebag.
 
         :param roll: Roll to initialize with or if no roll is supplied, '0'
+        :param functions: Whether to allow function calls. Defaults to yes
+        :param floats: Whether to allow for parsing floats. Defaults to yes. When set to false division will act as floor division
         :return: None
         """
         self._roll = None
         self._last_roll = None
         self._last_explanation = None
+        self.floats = floats
+        self.functions = functions
 
         self.roll = roll
 
     def roll_dice(self):  # Roll dice with current roll
         """
-        Rolls dicebag and sets lastroll to roll results
+        Rolls dicebag and sets last_roll and last_explanation to roll results
 
         :return: Roll results.
         """
-        roll = roll_dice(self.roll)
+        roll = roll_dice(self.roll, floats=self.floats, functions=self.functions)
+
         self._last_roll = roll[0]
         self._last_explanation = roll[1]
-        return (self.last_roll, self.last_explanation)
+
+        return self.last_roll, self.last_explanation
 
     def __call__(self):  # Allow for calling the object, same thing as self.roll_dice
         """
@@ -240,7 +312,7 @@ def zero_width_split(pattern, string):
     """
     Split a string on a regex that only matches zero-width strings
 
-    :param pattern: Regex patttern that matches zero-width strings
+    :param pattern: Regex pattern that matches zero-width strings
     :param string: String to split on.
     :return: Split array
     """
@@ -288,7 +360,7 @@ def num_equal(result, operator, comparator):
         raise ValueError
 
 
-def roll_dice(roll):
+def roll_dice(roll, *, functions=True, floats=True):
     """
     Rolls dice in dice notation with advanced syntax used according to tinyurl.com/pydice
 
@@ -309,8 +381,6 @@ def roll_dice(roll):
             results.append(group)
             string.append(group)
             continue
-        else:
-            match = regex.match(r'\d+\.\d+', group, regex.IGNORECASE)
         try:
             explode = regex.match(r'^((\d*)d(\d+))!$', group, regex.IGNORECASE)  # Regex for exploding dice, ie. 2d10!, 4d100!, d12!, etc.
 
@@ -344,7 +414,7 @@ def roll_dice(roll):
 
             literal = regex.match(r'^(\d+)(?!\.)$', group, regex.IGNORECASE)  # Regex for number literals.
 
-            float = regex.match(r'^(\.\d+)|(\d+.\d+)$', group, regex.IGNORECASE) # Regex for floats
+            float_literal = regex.match(r'^(\.\d+)|(\d+.\d+)$', group, regex.IGNORECASE) # Regex for floats
 
             if explode is not None:  # Handle exploding dice without a comparison modifier.
                 type_of_dice = int(explode[3])
@@ -770,24 +840,24 @@ def roll_dice(roll):
             elif literal is not None:
                 results.append(int(literal[1]))  # Just append the integer value
                 string.append(literal[1])
-            elif float is not None:
-                results.append(float(group))
-                string.append(group)
+
+            elif float_literal is not None:
+                if floats:
+                    results.append(float(group))
+                    string.append(group)
+                else:
+                    raise TypeError
             else:
                 raise Exception
 
         except Exception:
             raise DiceGroupException('"%s" is not a valid dicegroup.' % group)
 
-    parser = SimpleEval() #The parser object parses the dice rolls and functions
+    parser = SimpleEval(floats=floats, functions=functions) #The parser object parses the dice rolls and functions
     try:
         final_result = parser.eval(''.join([str(x) for x in results])) #Call the parser to parse into one value
-        if final_result is True:
-            final_result = 1
-        elif final_result is False:
-            final_result = 0
-        else:
-            final_result = final_result
+        if not floats:
+            final_result = int(final_result)
     except Exception:
         raise DiceOperatorException('Error parsing operators and or functions')
 

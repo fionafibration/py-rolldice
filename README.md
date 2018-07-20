@@ -12,7 +12,19 @@ import rolldice
 result, explanation = rolldice.roll_dice('12d6 + 10')
 ```
 That's it. The function takes the string representation of your dice roll and will return a tuple containing the numerical result and a constructed representation string, in that order.
+#### Functions and Floats:
+By default the dice roller will parse floats and a limited set of function calls. This can be disabled if you want:
+```
+roll_dice('abs(-2)') # Will work
+roll_dice('abs(-2)', functions=False) # Won't work
 
+roll_dice('3 / 2') # Division will return a float
+roll_dice('3 / 2', floats=False) # Division will be floor division
+
+roll_dice('4.5') # Will work
+roll_dice('4.5', floats=False) # Won't work
+```
+These also work on the DiceBag class.
 ## Dice Syntax:
 
 Dice syntax is based on [CritDice](https://www.critdice.com/roll-advanced-dice/) syntax.  
@@ -38,7 +50,8 @@ abs(2d6-7): Absolute value of 2d6-7
 gcd(2d6, 2d6): GCD of 2d6 and 2d6
 lcm(7, 4d20): LCM of 7 and 4d20
 floor(2d6 / 2): Floor of 2d6 / 2
-ceil(2d6 / 2) Ceiling of 2d6 / 2
+ceil(2d6 / 2): Ceiling of 2d6 / 2
+prime(2d6): 1 if 2d6 is prime else 0
 ```
 Other functions may be added.
 ##### Note about exponentiation:
