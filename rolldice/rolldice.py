@@ -860,7 +860,13 @@ def roll_dice(roll, *, functions=True, floats=True):
 
     #Create explanation string and remove extraneous spaces
     explanation = ''.join(string)
-    explanation = zero_width_split(r'((?<=[\/%^+\/])(?![\/,]))|((?<![\/,])(?=[\/%^+]))|((?<=[^\(\)])(?=-))|(?<=-)(?=[^\d\(\)a-z\[\]])|(?<=\d-)(?=.)|(?<=,)(?![^[]*])|(?<=([^,]\*))(?!\*)|(?<![,\*])(?=\*)', explanation) #Split on ops to properly format the explanation
+    explanation = zero_width_split(r"""((?<=[\/%^+])(?![\/]))| # Split between /, %, ^, and +, respecting that // should not be split                                 ((?<![\/,])(?=[\/%^+]))|
+                                       ((?<=[^(])(?=-))(?!-[^[]*])| # Split in front of minuses that are not in a roll
+                                       (?<=-)(?=[^\d()a-z])| # Same for splitting after minuses and before non-literals
+                                       (?<=[\d)]-)(?=.)(?![^[]*])| # Split after a minus that is not in a roll again
+                                       (?<=,)(?![^[]*])| # Split after a comma that is not in a roll
+                                       (?<=([^,]\*))(?!\*)| # Split after a * that is not in a roll
+                                       (?<![,\*])(?=\*) # Split before a * that is not in a roll""", explanation, regex.VERBOSE) #Split on ops to properly format the explanation
     explanation = ' '.join(explanation)
     explanation = explanation.strip()
     explanation = regex.sub(r'[ \t]{2,}', ' ', explanation)
