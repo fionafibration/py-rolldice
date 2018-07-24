@@ -860,7 +860,7 @@ def roll_dice(roll, *, functions=True, floats=True):
 
     #Create explanation string and remove extraneous spaces
     explanation = ''.join(string)
-    explanation = zero_width_split(r"""((?<=[\/%^+])(?![\/]))| # Split between /, %, ^, and +, respecting that // should not be split                                 ((?<![\/,])(?=[\/%^+]))|
+    explanation = zero_width_split(r"""((?<=[\/%^+])(?![\/,]))|((?<![\/,])(?=[\/%^+])) # Split between /, %, ^, and +, respecting that // should not be split                                 ((?<![\/,])(?=[\/%^+]))|
                                        ((?<=[^(])(?=-))(?!-[^[]*])| # Split in front of minuses that are not in a roll
                                        (?<=-)(?=[^\d()a-z])| # Same for splitting after minuses and before non-literals
                                        (?<=[\d)]-)(?=.)(?![^[]*])| # Split after a minus that is not in a roll again
