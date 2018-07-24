@@ -866,3 +866,7 @@ def roll_dice(roll, *, functions=True, floats=True):
     explanation = regex.sub(r'[ \t]{2,}', ' ', explanation)
 
     return final_result, explanation
+
+if __name__ == '__main__':
+    while True:
+        print('%s, %s' % roll_dice(input()))
