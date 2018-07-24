@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="py-rolldice",
-    version="0.3.8",
+    version="0.3.9",
     author="Finian Blackett",
     author_email="spamsuckersunited@gmail.com",
     description="A module for parsing dice notation",
