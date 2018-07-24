@@ -313,7 +313,7 @@ def zero_width_split(pattern, string):
     :param string: String to split on.
     :return: Split array
     """
-    splits = list((m.start(), m.end()) for m in regex.finditer(pattern, string))
+    splits = list((m.start(), m.end()) for m in regex.finditer(pattern, string, regex.VERBOSE))
     starts = [0] + [i[1] for i in splits]
     ends = [i[0] for i in splits] + [len(string)]
     return [string[start:end] for start, end in zip(starts, ends)]
@@ -866,7 +866,7 @@ def roll_dice(roll, *, functions=True, floats=True):
                                        (?<=[\d)]-)(?=.)(?![^[]*])| # Split after a minus that is not in a roll again
                                        (?<=,)(?![^[]*])| # Split after a comma that is not in a roll
                                        (?<=([^,]\*))(?!\*)| # Split after a * that is not in a roll
-                                       (?<![,\*])(?=\*) # Split before a * that is not in a roll""", explanation, regex.VERBOSE) #Split on ops to properly format the explanation
+                                       (?<![,\*])(?=\*) # Split before a * that is not in a roll""", explanation) #Split on ops to properly format the explanation
     explanation = ' '.join(explanation)
     explanation = explanation.strip()
     explanation = regex.sub(r'[ \t]{2,}', ' ', explanation)
