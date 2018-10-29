@@ -74,10 +74,10 @@ def rabin_miller(p):
     # From this stackoverflow answer: https://codegolf.stackexchange.com/questions/26739/super-speedy-totient-function
     if p < 2:
         return False
-    if p != 2 and p % 2 == 0:
+    if p != 2 and p & 1 == 0:
         return False
     s = p - 1
-    while s % 2 == 0:
+    while s & 1 == 0:
         s >>= 1
     for x in range(10):
         a = random.randrange(p - 1) + 1
