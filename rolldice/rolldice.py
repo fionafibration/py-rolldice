@@ -15,6 +15,7 @@ import ast
 import regex
 import operator
 import math
+import sys
 
 class DiceGroupException(Exception):  # Exception for when dice group is malformed, ie '12d6>7!'
     def __init__(self, *args, **kwargs):
@@ -127,11 +128,18 @@ class SimpleEval(object):
 
         self.functions = DEFAULT_FUNCTIONS
 
-        self.nodes = {
-            ast.Constant: self._eval_num,
-            ast.UnaryOp: self._eval_unaryop,
-            ast.BinOp: self._eval_binop,
-        }
+        if sys.version_info < (3, 8):
+            self.nodes = {
+                ast.Num: self._eval_num,
+                ast.UnaryOp: self._eval_unaryop,
+                ast.BinOp: self._eval_binop,
+            }
+        else:
+            self.nodes = {
+                ast.Constant: self._eval_num,
+                ast.UnaryOp: self._eval_unaryop,
+                ast.BinOp: self._eval_binop,
+            }
 
         if functions:
             self.nodes[ast.Call] = self._eval_call
