@@ -128,7 +128,7 @@ class SimpleEval(object):
         self.functions = DEFAULT_FUNCTIONS
 
         self.nodes = {
-            ast.Num: self._eval_num,
+            ast.Constant: self._eval_num,
             ast.UnaryOp: self._eval_unaryop,
             ast.BinOp: self._eval_binop,
         }
