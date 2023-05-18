@@ -52,6 +52,8 @@ lcm(7, 4d20): LCM of 7 and 4d20
 floor(2d6 / 2): Floor of 2d6 / 2
 ceil(2d6 / 2): Ceiling of 2d6 / 2
 prime(2d6): 1 if 2d6 is prime else 0
+max(2d6, ... ,3d4): returns biggest result
+min(2d6, ... ,3d4): returns smallest result
 ```
 Other functions may be added.
 ##### Note about exponentiation:
