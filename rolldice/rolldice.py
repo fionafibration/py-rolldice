@@ -92,7 +92,7 @@ def rabin_miller(p):
     return True
 
 
-DEFAULT_FUNCTIONS = {"abs": abs, 'gcd': gcd, 'lcm': lcm, 'ceil': math.ceil, 'floor': math.floor, 'prime': rabin_miller}
+DEFAULT_FUNCTIONS = {"abs": abs, 'gcd': gcd, 'lcm': lcm, 'ceil': math.ceil, 'floor': math.floor, 'prime': rabin_miller, 'max': max, 'min': min}
 
 DEFAULT_OPS = {ast.Add: operator.add, ast.Sub: operator.sub, ast.Mult: operator.mul,
                ast.Div: operator.truediv, ast.FloorDiv: operator.floordiv,
