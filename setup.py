@@ -7,12 +7,12 @@ with open("README.md", "r") as fh:
 setuptools.setup(
     name="py-rolldice",
     version="0.4.0",
-    author="Finian Blackett",
+    author="Fiona Blackett",
     author_email="spamsuckersunited@gmail.com",
     description="A module for parsing dice notation",
     long_description=long_description,
     long_description_content_type='text/markdown',
-    url="https://github.com/ThePlasmaRailgun/py-rolldice",
+    url="https://github.com/fionafibration/py-rolldice",
     packages=setuptools.find_packages(),
     classifiers=(
         "Programming Language :: Python :: 3.6",
