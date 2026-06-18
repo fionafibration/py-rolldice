@@ -3,8 +3,8 @@
 
 """
 py-dice-roll
-Created by Finianb1
-https://github.com/ThePlasmaRailgun/py-dice-roll/
+Created by fionafibration
+https://github.com/fionafibration/py-dice-roll/
 Math parser thanks to DanTheDeckie on GitHub
 
 https://github.com/danthedeckie/simpleeval
