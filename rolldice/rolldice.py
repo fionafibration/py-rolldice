@@ -180,9 +180,9 @@ class SimpleEval(object):
         :return: Result of node
         """
         if self.floats:
-            return node.n
+            return node.value
         else:
-            return int(node.n)
+            return int(node.value)
 
     def _eval_unaryop(self, node):
         """
